@@ -10,6 +10,8 @@ Usage: python init_check.py
 import sys
 import os
 
+# Add project root to sys.path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 REQUIRED_FILES = [
     "AGENTS.md",
@@ -19,12 +21,12 @@ REQUIRED_FILES = [
 ]
 
 MODULE_FILES = [
-    "sensor_data.py",
-    "aes_crypto.py",
-    "rsa_crypto.py",
-    "hmac_auth.py",
-    "client.py",
-    "server.py",
+    "data/sensor_data.py",
+    "crypto/aes_crypto.py",
+    "crypto/rsa_crypto.py",
+    "auth/hmac_auth.py",
+    "network/client.py",
+    "network/server.py",
     "main.py",
 ]
 
@@ -49,7 +51,6 @@ def check_project_structure():
         return False
     print("[OK] All required files present.")
 
-    # Check already-created modules
     existing = [f for f in MODULE_FILES if os.path.isfile(f)]
     if existing:
         print(f"[OK] {len(existing)}/{len(MODULE_FILES)} modules created.")
@@ -61,8 +62,14 @@ def check_project_structure():
 def check_imports():
     """Verify all created Python modules can be imported."""
     modules = []
-    for mod_name in ["sensor_data", "aes_crypto", "rsa_crypto", "hmac_auth", "client", "server"]:
-        if os.path.isfile(f"{mod_name}.py"):
+    module_map = {
+        "data.sensor_data": "data/sensor_data.py",
+        "crypto.aes_crypto": "crypto/aes_crypto.py",
+        "crypto.rsa_crypto": "crypto/rsa_crypto.py",
+        "auth.hmac_auth": "auth/hmac_auth.py",
+    }
+    for mod_name, file_path in module_map.items():
+        if os.path.isfile(file_path):
             modules.append(mod_name)
 
     if not modules:

@@ -1,34 +1,29 @@
 ﻿# Session Handoff Notes
 
-## Session: 2026-06-14
+## Session: 2026-06-14 (feat-003 complete)
 
 ### Completed This Session
-- Rewrote AGENTS.md with full project structure, architecture, git strategy, and 6-step feature development process
-- Created `sensor_data.py` — sensor data simulation (temperature, humidity, pressure)
-- Created `test_sensor.py` — 15 tests, all passing
-- Created `aes_crypto.py` — AES-128 from scratch (S-Box, key expansion, encrypt/decrypt, PKCS7)
-- Created `test_aes.py` — 23 tests, all passing (includes NIST FIPS-197 test vector)
-- Fixed `init_check.py` — now adapts to partial project state (only checks existing modules)
-- Initialized Git repo, added remote origin
-- Updated `progress.md` with evidence for feat-001 and feat-002
+- feat-001: sensor_data.py + test_sensor.py (15 tests)
+- feat-002: aes_crypto.py + test_aes.py (23 tests, NIST FIPS-197 vector)
+- feat-003: rsa_crypto.py + test_rsa.py (28 tests)
+- Created directory structure: data/, crypto/, auth/, network/
+- Rewrote AGENTS.md with full architecture, git strategy, 6-step process
+- Fixed init_check.py to work with partial project state
+- Initialized Git repo with remote origin
 
 ### Current Status
-- **Completed:** feat-001, feat-002
-- **In Progress:** feat-003 (RSA)
-- **Pending:** feat-004 (HMAC), feat-005 (Server), feat-006 (Client), feat-007 (Integration)
+- **Completed:** feat-001, feat-002, feat-003
+- **Next:** feat-004 (HMAC-SHA256 authentication)
 
 ### What to Do Next
-1. Implement `rsa_crypto.py` — RSA key generation, encrypt, decrypt (from scratch, stdlib only)
-2. Create `test_rsa.py` — validate key pair generation and encrypt/decrypt round-trip
-3. Run `python init_check.py`
-4. Run `python test_rsa.py`
-5. Update `progress.md` with evidence
-6. Git commit with `feat:` prefix
-7. Update this file
+1. Implement `auth/hmac_auth.py` — SHA-256 + HMAC from scratch
+2. Create `test_hmac.py` — validate tag computation and tamper detection
+3. Run `python init_check.py`, `python test_hmac.py`
+4. Update progress.md, git commit, push
 
 ### Known Issues / Notes
-- `gmul(0xFE, 0x02)` returns `0xE7` (correct per GF(2^8) math with polynomial 0x11B)
-- AES ECB mode only (suitable for this educational experiment)
-- All crypto implemented from scratch — no external libraries
+- AES ECB mode (educational purpose)
+- RSA 2048-bit default key, PKCS#1 v1.5 padding
+- All crypto stdlib only
 - Git remote: https://github.com/sprog-man/infomation-safe.git
 
