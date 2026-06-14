@@ -3,7 +3,7 @@
 ## Current State
 
 **Active Feature:** feat-007 (Integration & Report)
-**Status:** Pending
+**Status:** Completed
 **Last Updated:** 2026-06-14
 
 ---
@@ -132,7 +132,25 @@
 
 | Feature | Name | Dependencies |
 |---------|------|-------------|
-| feat-007 | Integration & Report | feat-005, feat-006 |
+| (none) | — | — |
+
+---
+
+### feat-007: Integration & Report ✅
+
+**Status:** Completed
+**Date:** 2026-06-14
+
+**Done Criteria Verification:**
+- [x] Single `python main.py` runs the full pipeline.
+  - Evidence: `main.py` lines 122-204 (`run_local_e2e`) — 6-phase pipeline: keygen → sensor data → AES → RSA → HMAC → TCP E2E
+- [x] All test scripts pass.
+  - Evidence: 99 tests total — test_sensor.py (15), test_aes.py (23), test_rsa.py (28), test_hmac.py (20), test_client.py (9), test_server.py (4) — all passing
+- [x] Report sections match experiment requirements.
+  - Evidence: `main.py` lines 210-260 (`run_standalone_demo`) demonstrates all 5 experiment sections: sensor data collection, AES encryption, RSA key encryption, HMAC authentication, TCP transmission
+
+**Files:**
+- `main.py` — unified entry point with --demo / --e2e / default modes
 
 ---
 

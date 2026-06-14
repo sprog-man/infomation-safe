@@ -95,7 +95,7 @@
      {
        "id": "feat-007",
        "name": "Integration & Report",
-       "status": "pending",
+       "status": "completed",
        "description": "Integrate all components into a single runnable project. Ensure end-to-end flow works. Prepare experiment report structure.",
        "dependencies": ["feat-005", "feat-006"],
        "done_criteria": [
@@ -103,7 +103,13 @@
          "All test scripts pass.",
          "Report sections match experiment requirements."
        ],
-       "evidence": []
+       "evidence": [
+         "main.py lines 122-204 (run_local_e2e) — 6-phase pipeline: keygen → sensor data → AES → RSA → HMAC → TCP E2E",
+         "main.py lines 210-260 (run_standalone_demo) — standalone crypto verification",
+         "main.py lines 263-306 (main) — argparse with --demo / --e2e / default mode",
+         "All 6 test scripts pass: 15+23+28+20+9+4 = 99 tests total",
+         "Standalone demo and E2E pipeline both verified with real output"
+       ]
      }
    ]
  }
