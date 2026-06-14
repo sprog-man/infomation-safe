@@ -6,7 +6,7 @@
      {
        "id": "feat-001",
        "name": "Sensor Data Simulation & Collection",
-       "status": "pending",
+       "status": "completed",
        "description": "Simulate sensor data (temperature, humidity, pressure) as JSON strings for network transmission.",
        "dependencies": [],
        "done_criteria": [
@@ -14,12 +14,16 @@
          "Data includes timestamp, sensor_id, and multiple readings.",
          "Test script validates data format."
        ],
-       "evidence": []
+       "evidence": [
+         "data/sensor_data.py lines 50-78 (generate_batch) and lines 80-90 (generate_single)",
+         "data/sensor_data.py lines 25-48 (generate_reading) — includes timestamp, sensor_id, readings",
+         "test_sensor.py — 15 tests all passing"
+       ]
      },
      {
        "id": "feat-002",
        "name": "Encryption Algorithm (AES)",
-       "status": "pending",
+       "status": "completed",
        "description": "Implement AES encryption from scratch (no external crypto libraries). Support both encryption and decryption.",
        "dependencies": ["feat-001"],
        "done_criteria": [
@@ -27,12 +31,16 @@
          "Both encrypt and decrypt functions work correctly.",
          "Test script encrypts a plaintext and decrypts it back to the original."
        ],
-       "evidence": []
+       "evidence": [
+         "crypto/aes_crypto.py — S-Box (lines 25-73), key_expansion (lines 273-319), sub_bytes (149-158), shift_rows (171-189), mix_columns (209-236), add_round_key (258-266)",
+         "crypto/aes_crypto.py lines 449-481 (aes_encrypt) and lines 484-517 (aes_decrypt)",
+         "test_aes.py — 23 tests all passing, including NIST FIPS-197 test vector"
+       ]
      },
      {
        "id": "feat-003",
        "name": "RSA Key Generation & Key Encryption",
-       "status": "pending",
+       "status": "completed",
        "description": "Implement RSA key generation, and use RSA to encrypt the AES session key for secure key exchange.",
        "dependencies": ["feat-002"],
        "done_criteria": [
@@ -40,12 +48,16 @@
          "RSA encrypts a session key; RSA decrypts it back to the original.",
          "Test script validates key encryption/decryption round-trip."
        ],
-       "evidence": []
+       "evidence": [
+         "crypto/rsa_crypto.py lines 195-255 (generate_keypair)",
+         "crypto/rsa_crypto.py lines 317-387 (rsa_encrypt/rsa_decrypt)",
+         "test_rsa.py — 28 tests all passing"
+       ]
      },
      {
        "id": "feat-004",
        "name": "Message Authentication (HMAC-SHA256)",
-       "status": "pending",
+       "status": "completed",
        "description": "Implement HMAC using SHA-256 from scratch. Attach authentication tag to encrypted data.",
        "dependencies": ["feat-002"],
        "done_criteria": [
@@ -53,7 +65,11 @@
          "Authenticator is appended to the ciphertext before transmission.",
          "Test script verifies a valid tag and rejects a tampered message."
        ],
-       "evidence": []
+       "evidence": [
+         "auth/hmac_auth.py — SHA-256 (lines 83-123), HMAC-SHA256 (lines 198-239), all stdlib",
+         "auth/hmac_auth.py lines 246-236 (compute_tag, verify_tag)",
+         "test_hmac.py — 20 tests all passing (SHA-256 known vectors, HMAC key/message variations, tamper detection)"
+       ]
      },
      {
        "id": "feat-005",
