@@ -1,4 +1,9 @@
-﻿"""
+﻿import sys
+import os
+"# Add project root to path for standalone usage"
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+"""
 sensor_data.py - Sensor Data Simulation & Collection
 
 Generates simulated sensor readings (temperature, humidity, pressure)

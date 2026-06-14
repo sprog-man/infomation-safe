@@ -1,4 +1,9 @@
-﻿"""
+﻿import sys
+import os
+"# Add project root to path for standalone usage"
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+"""
 aes_crypto.py - AES (Advanced Encryption Standard) Implementation from Scratch
 
 Supports AES-128 encryption and decryption using pure Python.

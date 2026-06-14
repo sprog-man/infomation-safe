@@ -9,7 +9,7 @@ Prints summary on completion.
 
 import json
 import unittest
-from sensor_data import generate_reading, generate_batch, generate_single, SENSOR_IDS
+from data.sensor_data import generate_reading, generate_batch, generate_single, SENSOR_IDS
 
 
 class TestGenerateReading(unittest.TestCase):

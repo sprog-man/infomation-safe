@@ -1,4 +1,9 @@
-﻿"""
+﻿import sys
+import os
+"# Add project root to path for standalone usage"
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+"""
 rsa_crypto.py - RSA Implementation from Scratch
 
 Implements RSA key generation, encryption, and decryption using pure Python.

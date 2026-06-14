@@ -8,7 +8,7 @@ Prints summary on completion.
 """
 
 import unittest
-from aes_crypto import (
+from crypto.aes_crypto import (
     aes_encrypt,
     aes_decrypt,
     aes_encrypt_block,

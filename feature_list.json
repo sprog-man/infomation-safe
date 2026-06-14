@@ -1,7 +1,7 @@
 {
    "version": "1.0",
    "description": "Information Safety Experiment — Network Data Encryption, Authentication, and Transmission",
-   "active_feature": "feat-003",
+   "active_feature": "feat-006",
    "features": [
      {
        "id": "feat-001",
@@ -58,7 +58,7 @@
      {
        "id": "feat-005",
        "name": "Network Transmission — Server (Receiver)",
-       "status": "pending",
+       "status": "completed",
        "description": "Build a TCP server that receives encrypted+authenticated data, verifies the HMAC tag, decrypts, and outputs original sensor data.",
        "dependencies": ["feat-002", "feat-003", "feat-004"],
        "done_criteria": [
@@ -67,7 +67,12 @@
          "Verifies HMAC, decrypts AES, prints original sensor data.",
          "Test script runs server + client and validates end-to-end."
        ],
-       "evidence": []
+       "evidence": [
+         "network/server.py lines 178-209 (run_server)",
+         "network/server.py lines 64-130 (receive_frame)",
+         "network/server.py lines 133-175 (handle_client)",
+         "test_server.py — 4 tests all passing (roundtrip, tamper rejection, invalid HMAC, 10-readings batch)"
+       ]
      },
      {
        "id": "feat-006",
