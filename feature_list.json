@@ -1,7 +1,7 @@
 {
    "version": "1.0",
    "description": "Information Safety Experiment — Network Data Encryption, Authentication, and Transmission",
-   "active_feature": "feat-006",
+   "active_feature": "feat-007",
    "features": [
      {
        "id": "feat-001",
@@ -77,7 +77,7 @@
      {
        "id": "feat-006",
        "name": "Network Transmission — Client (Sender)",
-       "status": "pending",
+       "status": "completed",
        "description": "Build a TCP client that generates sensor data, encrypts with AES, encrypts AES key with RSA, computes HMAC, and sends.",
        "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004"],
        "done_criteria": [
@@ -85,7 +85,12 @@
          "End-to-end test: client sends data, server receives and decrypts correctly.",
          "Tamper test: modify the payload mid-transmission and confirm server rejects it."
        ],
-       "evidence": []
+       "evidence": [
+         "network/client.py lines 93-123 (build_frame) — encrypt AES + RSA encrypt key + pack_frame",
+         "network/client.py lines 126-158 (send_frame) — TCP connect, sendall, receive response",
+         "network/client.py lines 161-197 (run_client) — full pipeline orchestration",
+         "test_client.py — 9 tests all passing (frame format, HMAC validity, size checks, deterministic key, roundtrip, tamper rejection, invalid HMAC, multi-batch)"
+       ]
      },
      {
        "id": "feat-007",

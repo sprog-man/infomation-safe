@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Active Feature:** feat-005 (Network Transmission — Server)
+**Active Feature:** feat-007 (Integration & Report)
 **Status:** Pending
 **Last Updated:** 2026-06-14
 
@@ -109,11 +109,29 @@
 
 ---
 
+### feat-006: Network Transmission — Client (TCP Sender) ✅
+
+**Status:** Completed
+**Date:** 2026-06-14
+
+**Done Criteria Verification:**
+- [x] Client connects to server, sends complete encrypted+authenticated frame.
+  - Evidence: `network/client.py` lines 161-197 (`run_client`) — orchestrates key loading, data generation, encryption, and TCP send
+- [x] End-to-end test: client sends data, server receives and decrypts correctly.
+  - Evidence: `test_client.py` — `test_client_server_roundtrip` passes
+- [x] Tamper test: modify the payload mid-transmission and confirm server rejects it.
+  - Evidence: `test_client.py` — `test_client_tampered_payload_rejected` and `test_client_invalid_hmac_rejected` both pass
+
+**Files:**
+- `network/client.py` — TCP client module
+- `test_client.py` — 9 unit/integration tests
+
+---
+
 ## Pending Features
 
 | Feature | Name | Dependencies |
 |---------|------|-------------|
-| feat-006 | Network Transmission — Client | feat-001, feat-002, feat-003, feat-004 |
 | feat-007 | Integration & Report | feat-005, feat-006 |
 
 ---
