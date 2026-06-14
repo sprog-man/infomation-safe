@@ -142,6 +142,23 @@ docs: update AGENTS.md with directory structure
 
 ---
 
+## Feature 开发流程（每完成一个 feat 必须依次执行）
+
+每完成一个 feat，**必须严格按以下顺序执行**，不可跳过或颠倒：
+
+1. **实现代码** — 编写模块代码及配套测试
+2. **`python init_check.py`** — 验证所有组件能正常加载
+3. **`python test_*.py`** — 运行对应测试脚本，确保全部通过
+4. **更新 `progress.md`** — 填写证据引用，标注每个 done criteria 对应的文件
+5. **`git commit`** — 使用 `feat:` 前缀提交，记录该 feat 的变更详情
+6. **更新 `session-handoff.md`** — 写入会话交接记录，方便下次恢复
+
+然后才开始下一个 feat。
+
+核心原则：**One feature at a time. Each feature must pass verification before the next begins.**
+
+---
+
 ## Coding Standards
 
 ### General Rules
