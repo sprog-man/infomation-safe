@@ -1,0 +1,99 @@
+{
+   "version": "1.0",
+   "description": "Information Safety Experiment — Network Data Encryption, Authentication, and Transmission",
+   "active_feature": "feat-003",
+   "features": [
+     {
+       "id": "feat-001",
+       "name": "Sensor Data Simulation & Collection",
+       "status": "pending",
+       "description": "Simulate sensor data (temperature, humidity, pressure) as JSON strings for network transmission.",
+       "dependencies": [],
+       "done_criteria": [
+         "A function generates structured sensor data as a JSON string.",
+         "Data includes timestamp, sensor_id, and multiple readings.",
+         "Test script validates data format."
+       ],
+       "evidence": []
+     },
+     {
+       "id": "feat-002",
+       "name": "Encryption Algorithm (AES)",
+       "status": "pending",
+       "description": "Implement AES encryption from scratch (no external crypto libraries). Support both encryption and decryption.",
+       "dependencies": ["feat-001"],
+       "done_criteria": [
+         "AES implementation includes S-Box, key expansion, SubBytes, ShiftRows, MixColumns, AddRoundKey.",
+         "Both encrypt and decrypt functions work correctly.",
+         "Test script encrypts a plaintext and decrypts it back to the original."
+       ],
+       "evidence": []
+     },
+     {
+       "id": "feat-003",
+       "name": "RSA Key Generation & Key Encryption",
+       "status": "pending",
+       "description": "Implement RSA key generation, and use RSA to encrypt the AES session key for secure key exchange.",
+       "dependencies": ["feat-002"],
+       "done_criteria": [
+         "RSA key pair (public/private) is generated programmatically.",
+         "RSA encrypts a session key; RSA decrypts it back to the original.",
+         "Test script validates key encryption/decryption round-trip."
+       ],
+       "evidence": []
+     },
+     {
+       "id": "feat-004",
+       "name": "Message Authentication (HMAC-SHA256)",
+       "status": "pending",
+       "description": "Implement HMAC using SHA-256 from scratch. Attach authentication tag to encrypted data.",
+       "dependencies": ["feat-002"],
+       "done_criteria": [
+         "SHA-256 and HMAC implemented without external libraries.",
+         "Authenticator is appended to the ciphertext before transmission.",
+         "Test script verifies a valid tag and rejects a tampered message."
+       ],
+       "evidence": []
+     },
+     {
+       "id": "feat-005",
+       "name": "Network Transmission — Server (Receiver)",
+       "status": "pending",
+       "description": "Build a TCP server that receives encrypted+authenticated data, verifies the HMAC tag, decrypts, and outputs original sensor data.",
+       "dependencies": ["feat-002", "feat-003", "feat-004"],
+       "done_criteria": [
+         "TCP server listens and accepts connections.",
+         "Receives a frame containing [encrypted_payload + hmac_tag].",
+         "Verifies HMAC, decrypts AES, prints original sensor data.",
+         "Test script runs server + client and validates end-to-end."
+       ],
+       "evidence": []
+     },
+     {
+       "id": "feat-006",
+       "name": "Network Transmission — Client (Sender)",
+       "status": "pending",
+       "description": "Build a TCP client that generates sensor data, encrypts with AES, encrypts AES key with RSA, computes HMAC, and sends.",
+       "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004"],
+       "done_criteria": [
+         "Client connects to server, sends complete encrypted+authenticated frame.",
+         "End-to-end test: client sends data, server receives and decrypts correctly.",
+         "Tamper test: modify the payload mid-transmission and confirm server rejects it."
+       ],
+       "evidence": []
+     },
+     {
+       "id": "feat-007",
+       "name": "Integration & Report",
+       "status": "pending",
+       "description": "Integrate all components into a single runnable project. Ensure end-to-end flow works. Prepare experiment report structure.",
+       "dependencies": ["feat-005", "feat-006"],
+       "done_criteria": [
+         "Single `python main.py` runs the full pipeline.",
+         "All test scripts pass.",
+         "Report sections match experiment requirements."
+       ],
+       "evidence": []
+     }
+   ]
+ }
