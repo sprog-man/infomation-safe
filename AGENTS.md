@@ -96,40 +96,56 @@ main.py                 → all modules
 
 ---
 
-## Git Version Management
+## Git 版本管理策略
 
-### Branch Strategy
-- `main` — stable, always passing state.
-- Feature branches: `feat/N-feature-name` (e.g., `feat/AES-encryption`).
-- Never push broken code to `main`.
+### 初始化
 
-### Commit Conventions
-```
-<type>(<scope>): <subject>
-
-Types: feat, fix, docs, test, refactor, chore
-Scope: sensor, aes, rsa, hmac, client, server, e2e
+```bash
+git init
+echo "__pycache__/".gitignore
+echo "*.pyc" >> .gitignore
+echo ".env" >> .gitignore
+echo "data/" >> .gitignore
 ```
 
-Examples:
+### 分支策略
+
 ```
-feat(sensor): implement sensor data simulation module
+main          # 稳定版本
+├── develop   # 开发主分支
+    ├── phase/1-sensor-data
+    ├── phase/2-aes-encryption
+    ├── phase/3-rsa-keygen
+    ├── phase/4-hmac-auth
+    ├── phase/5-client-server
+    └── phase/6-integration
+```
+
+**远程仓库地址**：[sprog-man/infomation-safe](https://github.com/sprog-man/infomation-safe.git)
+
+**提交规范：** 使用 `feat:`, `fix:`, `refactor:`, `docs:`, `test:` 前缀。
+
+示例：
+```
+feat: implement sensor data simulation module
 test(aes): add round-trip and padding tests
 fix(hmac): correct HMAC tag computation for empty messages
+docs: update AGENTS.md with directory structure
 ```
 
-### Workflow
-1. Create branch from `main`: `git checkout -b feat/N-description`
-2. Implement + test locally.
-3. Commit frequently with descriptive messages.
-4. Push and open PR to `main`.
-5. Squash-merge after review.
+### 工作流
+
+1. `git checkout -b phase/N-description` 从 `main` 创建开发分支
+2. 本地实现 + 测试，频繁提交
+3. 合并到 `main`：`git checkout main && git merge --no-ff phase/N-description`
+4. 推送到远程：`git push origin main`
 
 ---
 
 ## Coding Standards
 
 ### General Rules
+
 - **One feature at a time.** Do not skip ahead. Each feature must pass verification before the next begins.
 - **Write evidence, not claims.** Every completed item in `progress.md` must reference actual files that exist.
 - **No external crypto libraries.** Encryption and authentication algorithms MUST be implemented from scratch. Only Python standard library imports allowed.
@@ -137,6 +153,7 @@ fix(hmac): correct HMAC tag computation for empty messages
 - **Comments required.** Every algorithm function must have comments explaining its logic.
 
 ### Python Style
+
 - Use type hints for all public function signatures.
 - Docstrings: Google-style with Parameters, Returns, Raises sections.
 - Maximum line length: 100 characters.
