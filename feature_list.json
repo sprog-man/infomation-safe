@@ -1,131 +1,177 @@
 {
-   "version": "1.0",
-   "description": "Information Safety Experiment — Network Data Encryption, Authentication, and Transmission",
-   "active_feature": "feat-007",
-   "features": [
-     {
-       "id": "feat-001",
-       "name": "Sensor Data Simulation & Collection",
-       "status": "completed",
-       "description": "Simulate sensor data (temperature, humidity, pressure) as JSON strings for network transmission.",
-       "dependencies": [],
-       "done_criteria": [
-         "A function generates structured sensor data as a JSON string.",
-         "Data includes timestamp, sensor_id, and multiple readings.",
-         "Test script validates data format."
-       ],
-       "evidence": [
-         "data/sensor_data.py lines 50-78 (generate_batch) and lines 80-90 (generate_single)",
-         "data/sensor_data.py lines 25-48 (generate_reading) — includes timestamp, sensor_id, readings",
-         "test_sensor.py — 15 tests all passing"
-       ]
-     },
-     {
-       "id": "feat-002",
-       "name": "Encryption Algorithm (AES)",
-       "status": "completed",
-       "description": "Implement AES encryption from scratch (no external crypto libraries). Support both encryption and decryption.",
-       "dependencies": ["feat-001"],
-       "done_criteria": [
-         "AES implementation includes S-Box, key expansion, SubBytes, ShiftRows, MixColumns, AddRoundKey.",
-         "Both encrypt and decrypt functions work correctly.",
-         "Test script encrypts a plaintext and decrypts it back to the original."
-       ],
-       "evidence": [
-         "crypto/aes_crypto.py — S-Box (lines 25-73), key_expansion (lines 273-319), sub_bytes (149-158), shift_rows (171-189), mix_columns (209-236), add_round_key (258-266)",
-         "crypto/aes_crypto.py lines 449-481 (aes_encrypt) and lines 484-517 (aes_decrypt)",
-         "test_aes.py — 23 tests all passing, including NIST FIPS-197 test vector"
-       ]
-     },
-     {
-       "id": "feat-003",
-       "name": "RSA Key Generation & Key Encryption",
-       "status": "completed",
-       "description": "Implement RSA key generation, and use RSA to encrypt the AES session key for secure key exchange.",
-       "dependencies": ["feat-002"],
-       "done_criteria": [
-         "RSA key pair (public/private) is generated programmatically.",
-         "RSA encrypts a session key; RSA decrypts it back to the original.",
-         "Test script validates key encryption/decryption round-trip."
-       ],
-       "evidence": [
-         "crypto/rsa_crypto.py lines 195-255 (generate_keypair)",
-         "crypto/rsa_crypto.py lines 317-387 (rsa_encrypt/rsa_decrypt)",
-         "test_rsa.py — 28 tests all passing"
-       ]
-     },
-     {
-       "id": "feat-004",
-       "name": "Message Authentication (HMAC-SHA256)",
-       "status": "completed",
-       "description": "Implement HMAC using SHA-256 from scratch. Attach authentication tag to encrypted data.",
-       "dependencies": ["feat-002"],
-       "done_criteria": [
-         "SHA-256 and HMAC implemented without external libraries.",
-         "Authenticator is appended to the ciphertext before transmission.",
-         "Test script verifies a valid tag and rejects a tampered message."
-       ],
-       "evidence": [
-         "auth/hmac_auth.py — SHA-256 (lines 83-123), HMAC-SHA256 (lines 198-239), all stdlib",
-         "auth/hmac_auth.py lines 246-236 (compute_tag, verify_tag)",
-         "test_hmac.py — 20 tests all passing (SHA-256 known vectors, HMAC key/message variations, tamper detection)"
-       ]
-     },
-     {
-       "id": "feat-005",
-       "name": "Network Transmission — Server (Receiver)",
-       "status": "completed",
-       "description": "Build a TCP server that receives encrypted+authenticated data, verifies the HMAC tag, decrypts, and outputs original sensor data.",
-       "dependencies": ["feat-002", "feat-003", "feat-004"],
-       "done_criteria": [
-         "TCP server listens and accepts connections.",
-         "Receives a frame containing [encrypted_payload + hmac_tag].",
-         "Verifies HMAC, decrypts AES, prints original sensor data.",
-         "Test script runs server + client and validates end-to-end."
-       ],
-       "evidence": [
-         "network/server.py lines 178-209 (run_server)",
-         "network/server.py lines 64-130 (receive_frame)",
-         "network/server.py lines 133-175 (handle_client)",
-         "test_server.py — 4 tests all passing (roundtrip, tamper rejection, invalid HMAC, 10-readings batch)"
-       ]
-     },
-     {
-       "id": "feat-006",
-       "name": "Network Transmission — Client (Sender)",
-       "status": "completed",
-       "description": "Build a TCP client that generates sensor data, encrypts with AES, encrypts AES key with RSA, computes HMAC, and sends.",
-       "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004"],
-       "done_criteria": [
-         "Client connects to server, sends complete encrypted+authenticated frame.",
-         "End-to-end test: client sends data, server receives and decrypts correctly.",
-         "Tamper test: modify the payload mid-transmission and confirm server rejects it."
-       ],
-       "evidence": [
-         "network/client.py lines 93-123 (build_frame) — encrypt AES + RSA encrypt key + pack_frame",
-         "network/client.py lines 126-158 (send_frame) — TCP connect, sendall, receive response",
-         "network/client.py lines 161-197 (run_client) — full pipeline orchestration",
-         "test_client.py — 9 tests all passing (frame format, HMAC validity, size checks, deterministic key, roundtrip, tamper rejection, invalid HMAC, multi-batch)"
-       ]
-     },
-     {
-       "id": "feat-007",
-       "name": "Integration & Report",
-       "status": "completed",
-       "description": "Integrate all components into a single runnable project. Ensure end-to-end flow works. Prepare experiment report structure.",
-       "dependencies": ["feat-005", "feat-006"],
-       "done_criteria": [
-         "Single `python main.py` runs the full pipeline.",
-         "All test scripts pass.",
-         "Report sections match experiment requirements."
-       ],
-       "evidence": [
-         "main.py lines 122-204 (run_local_e2e) — 6-phase pipeline: keygen → sensor data → AES → RSA → HMAC → TCP E2E",
-         "main.py lines 210-260 (run_standalone_demo) — standalone crypto verification",
-         "main.py lines 263-306 (main) — argparse with --demo / --e2e / default mode",
-         "All 6 test scripts pass: 15+23+28+20+9+4 = 99 tests total",
-         "Standalone demo and E2E pipeline both verified with real output"
-       ]
-     }
-   ]
- }
+  "version": "2.0",
+  "description": "Information Safety Experiment — Network Data Encryption, Authentication, and Transmission",
+  "active_feature": null,
+  "all_completed": true,
+  "verification_suite": {
+    "unit_tests": "make test",
+    "e2e_pipeline": "make e2e",
+    "standalone_demo": "make demo",
+    "full_verification": "make check",
+    "session_exit": "make exit",
+    "init_check": "python init_check.py",
+    "total_tests": 124
+  },
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Sensor Data Simulation & Collection",
+      "status": "passing",
+      "description": "Simulate sensor data (temperature, humidity, pressure) as JSON strings for network transmission.",
+      "dependencies": [],
+      "verification": "python test_sensor.py",
+      "done_criteria": [
+        "A function generates structured sensor data as a JSON string.",
+        "Data includes timestamp, sensor_id, and multiple readings.",
+        "Test script validates data format."
+      ],
+      "evidence": [
+        "data/sensor_data.py lines 50-78 (generate_batch) and lines 80-90 (generate_single)",
+        "data/sensor_data.py lines 25-48 (generate_reading) — includes timestamp, sensor_id, readings",
+        "test_sensor.py — 15 tests all passing"
+      ]
+    },
+    {
+      "id": "feat-002",
+      "name": "Encryption Algorithm (AES)",
+      "status": "passing",
+      "description": "Implement AES encryption from scratch (no external crypto libraries). Support both encryption and decryption.",
+      "dependencies": ["feat-001"],
+      "verification": "python test_aes.py",
+      "done_criteria": [
+        "AES implementation includes S-Box, key expansion, SubBytes, ShiftRows, MixColumns, AddRoundKey.",
+        "Both encrypt and decrypt functions work correctly.",
+        "Test script encrypts a plaintext and decrypts it back to the original."
+      ],
+      "evidence": [
+        "crypto/aes_crypto.py — S-Box (lines 25-73), key_expansion (lines 273-319), sub_bytes (149-158), shift_rows (171-189), mix_columns (209-236), add_round_key (258-266)",
+        "crypto/aes_crypto.py lines 449-481 (aes_encrypt) and lines 484-517 (aes_decrypt)",
+        "test_aes.py — 23 tests all passing, including NIST FIPS-197 test vector"
+      ]
+    },
+    {
+      "id": "feat-003",
+      "name": "RSA Key Generation & Key Encryption",
+      "status": "passing",
+      "description": "Implement RSA key generation, and use RSA to encrypt the AES session key for secure key exchange.",
+      "dependencies": ["feat-002"],
+      "verification": "python test_rsa.py",
+      "done_criteria": [
+        "RSA key pair (public/private) is generated programmatically.",
+        "RSA encrypts a session key; RSA decrypts it back to the original.",
+        "Test script validates key encryption/decryption round-trip."
+      ],
+      "evidence": [
+        "crypto/rsa_crypto.py lines 195-255 (generate_keypair)",
+        "crypto/rsa_crypto.py lines 317-387 (rsa_encrypt/rsa_decrypt)",
+        "test_rsa.py — 28 tests all passing"
+      ]
+    },
+    {
+      "id": "feat-004",
+      "name": "Message Authentication (HMAC-SHA256)",
+      "status": "passing",
+      "description": "Implement HMAC using SHA-256 from scratch. Attach authentication tag to encrypted data.",
+      "dependencies": ["feat-002"],
+      "verification": "python test_hmac.py",
+      "done_criteria": [
+        "SHA-256 and HMAC implemented without external libraries.",
+        "Authenticator is appended to the ciphertext before transmission.",
+        "Test script verifies a valid tag and rejects a tampered message."
+      ],
+      "evidence": [
+        "auth/hmac_auth.py — SHA-256 (lines 83-123), HMAC-SHA256 (lines 198-239), all stdlib",
+        "auth/hmac_auth.py lines 246-236 (compute_tag, verify_tag)",
+        "test_hmac.py — 20 tests all passing (SHA-256 known vectors, HMAC key/message variations, tamper detection)"
+      ]
+    },
+    {
+      "id": "feat-005",
+      "name": "Network Transmission — Server (Receiver)",
+      "status": "passing",
+      "description": "Build a TCP server that receives encrypted+authenticated data, verifies the HMAC tag, decrypts, and outputs original sensor data.",
+      "dependencies": ["feat-002", "feat-003", "feat-004"],
+      "verification": "python test_server.py",
+      "done_criteria": [
+        "TCP server listens and accepts connections.",
+        "Receives a frame containing [encrypted_payload + hmac_tag].",
+        "Verifies HMAC, decrypts AES, prints original sensor data.",
+        "Test script runs server + client and validates end-to-end."
+      ],
+      "evidence": [
+        "network/server.py lines 178-209 (run_server)",
+        "network/server.py lines 64-130 (receive_frame)",
+        "network/server.py lines 133-175 (handle_client)",
+        "test_server.py — 4 tests all passing (roundtrip, tamper rejection, invalid HMAC, 10-readings batch)"
+      ]
+    },
+    {
+      "id": "feat-006",
+      "name": "Network Transmission — Client (Sender)",
+      "status": "passing",
+      "description": "Build a TCP client that generates sensor data, encrypts with AES, encrypts AES key with RSA, computes HMAC, and sends.",
+      "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004"],
+      "verification": "python test_client.py",
+      "done_criteria": [
+        "Client connects to server, sends complete encrypted+authenticated frame.",
+        "End-to-end test: client sends data, server receives and decrypts correctly.",
+        "Tamper test: modify the payload mid-transmission and confirm server rejects it."
+      ],
+      "evidence": [
+        "network/client.py lines 93-123 (build_frame) — encrypt AES + RSA encrypt key + pack_frame",
+        "network/client.py lines 126-158 (send_frame) — TCP connect, sendall, receive response",
+        "network/client.py lines 161-197 (run_client) — full pipeline orchestration",
+        "test_client.py — 9 tests all passing (frame format, HMAC validity, size checks, deterministic key, roundtrip, tamper rejection, invalid HMAC, multi-batch)"
+      ]
+    },
+    {
+      "id": "feat-007",
+      "name": "Integration & Report",
+      "status": "passing",
+      "description": "Integrate all components into a single runnable project. Ensure end-to-end flow works. Prepare experiment report structure.",
+      "dependencies": ["feat-005", "feat-006"],
+      "verification": "make e2e && make demo",
+      "done_criteria": [
+        "Single `python main.py` runs the full pipeline.",
+        "All test scripts pass.",
+        "Report sections match experiment requirements."
+      ],
+      "evidence": [
+        "main.py lines 122-204 (run_local_e2e) — 6-phase pipeline: keygen → sensor data → AES → RSA → HMAC → TCP E2E",
+        "main.py lines 210-260 (run_standalone_demo) — standalone crypto verification",
+        "main.py lines 263-306 (main) — argparse with --demo / --e2e / default mode",
+        "All 6 test scripts pass: 15+23+28+20+9+4 = 99 tests total",
+        "Standalone demo and E2E pipeline both verified with real output"
+      ]
+    }
+    {
+      "id": "feat-008",
+      "name": "Web Frontend",
+      "status": "passing",
+      "description": "Browser-based web UI for the full pipeline: pipeline visualizer, crypto playground, E2E one-click and manual modes. Zero external dependencies — stdlib http.server + vanilla JS.",
+      "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004", "feat-005", "feat-006", "feat-007"],
+      "verification": "make web-test",
+      "done_criteria": [
+        "Web UI accessible at http://localhost:8080",
+        "Four tabs: Pipeline Wizard, Crypto Playground, E2E Auto, E2E Manual",
+        "All 9 API endpoints functional",
+        "18 HTTP API tests passing",
+        "Packet capture: server records raw TCP bytes, saves to captures/*.hex",
+        "File save: sensor data saved to captures/*.json on each received frame",
+        "Frontend displays decrypted sensor data and captured packet hex",
+        "Zero external dependencies — stdlib only"
+      ],
+      "evidence": [
+        "server_api.py — HTTP server + 9 API endpoints + static file serving",
+        "web/index.html — four-tab SPA shell",
+        "web/css/style.css — dark theme styling",
+        "web/js/pipeline.js — pipeline visualizer (5-step chain)",
+        "web/js/crypto.js — crypto playground (6 independent ops)",
+        "web/js/app.js — E2E auto + manual modes",
+        "test_server_api.py — 18 tests (sensor-data, aes-enc, aes-dec, keys, encrypt-key, hmac, verify-hmac, static files, error handling)",
+        "network/server.py — receive_frame now returns raw_frame, handle_client returns structured dict, run_server saves captures/*.hex and sensor_*.json",
+        "server_api.py — _handle_e2e_connection records capture_hex and sensor_data, e2e-full response includes decrypted data"
+      ]
+    }
+  ]
+}

@@ -1,14 +1,28 @@
-﻿# Agent Working Rules
+# Agent Working Rules
 
 ## Project Overview
 
-This is an **Information Safety Experiment** project demonstrating end-to-end network data security:
-- Sensor data simulation & collection
-- AES-128 encryption/decryption (from scratch)
-- RSA key generation & key encryption (from scratch)
-- HMAC-SHA256 message authentication (from scratch)
-- TCP server/client for secure network transmission
-- Full integration pipeline
+**Information Safety Experiment** — End-to-end network data security pipeline:
+sensor data simulation → AES-128 encryption → RSA key exchange → HMAC-SHA256 authentication → TCP transmission → full integration.
+
+All crypto implemented from scratch. Zero external dependencies.
+
+---
+
+## Quick Start
+
+```bash
+python init_check.py    # Verify project structure & imports
+make test               # Run all 7 core test scripts (106 tests)
+make web-test           # Run 18 web API tests
+make check              # Full verification (test + e2e)
+make check-web          # Full verification including web
+make exit               # Session exit checklist (5 dimensions)
+make demo               # Standalone crypto demo (no server)
+make e2e                # End-to-end pipeline (embedded server)
+make web                # Start web UI at http://localhost:8080
+python main.py          # Default: demo + e2e
+```
 
 ---
 
@@ -16,194 +30,103 @@ This is an **Information Safety Experiment** project demonstrating end-to-end ne
 
 ```
 infomation-safety2/
-├── AGENTS.md                  # This file — project rules & architecture
-├── feature_list.json          # Feature backlog with status tracking
-├── progress.md                # Session progress log with evidence
-├── session-handoff.md         # Inter-session handoff notes
-├── init_check.py              # Project initialization verification script
-├── main.py                    # Entry point — runs full end-to-end pipeline
+├── AGENTS.md              ← You are here (entry point)
+├── feature_list.json      ← Machine-readable feature backlog
+├── progress.md            ← Session progress log
+├── session-handoff.md     ← Inter-session handoff
+├── DECISIONS.md           ← Architecture decision log
+├── Makefile               ← Standardized commands
+├── init_check.py          ← Project initialization verifier
+├── main.py                ← Entry point (demo / e2e modes)
+├── server_api.py          ← Web UI server (http://localhost:8080)
+├── test_server_api.py     ← 18 web API tests
+├── web/                   ← Web frontend (vanilla HTML/CSS/JS)
+│   ├── index.html
+│   ├── css/style.css
+│   └── js/
 │
-├── # Data layer
-│   ├── sensor_data.py         # Sensor data simulation (temperature, humidity, pressure)
-│   └── test_sensor.py         # Tests for sensor data module
+├── data/                  # Sensor data simulation
+│   └── sensor_data.py
+├── crypto/                # Cryptography (stdlib only)
+│   ├── aes_crypto.py      # AES-128 ECB + PKCS7
+│   └── rsa_crypto.py      # RSA-2048 keygen + encrypt/decrypt
+├── auth/                  # Message authentication
+│   └── hmac_auth.py       # HMAC-SHA256 (SHA-256 + HMAC from scratch)
+├── network/               # TCP transmission
+│   ├── client.py          # Generate → encrypt → authenticate → send
+│   └── server.py          # Receive → verify → decrypt → output
 │
-├── # Cryptography layer (all from scratch, stdlib only)
-│   ├── aes_crypto.py          # AES-128 encryption/decryption (ECB + PKCS7)
-│   ├── test_aes.py            # Tests for AES module
-│   ├── rsa_crypto.py          # RSA key generation, encrypt, decrypt
-│   └── test_rsa.py            # Tests for RSA module
-│
-├── # Authentication layer
-│   ├── hmac_auth.py           # HMAC-SHA256 message authentication
-│   └── test_hmac.py           # Tests for HMAC module
-│
-├── # Network layer
-│   ├── client.py              # TCP client — generates, encrypts, authenticates, sends
-│   └── server.py              # TCP server — receives, verifies, decrypts, outputs
-│
-└── # Integration
-    └── test_end_to_end.py     # End-to-end test: client sends, server receives & verifies
+└── docs/                  # Topic-specific reference docs
+    ├── architecture.md    # Layer model, dependency graph
+    ├── git-workflow.md    # Branching strategy, commit conventions
+    ├── dev-process.md     # Per-feature development workflow
+    └── crypto-algorithms.md  # Algorithm principles (for experiment report)
 ```
-
-**Design principles:**
-- Flat structure — all modules at root level (no subpackages).
-- Each module has a matching `test_*.py` file.
-- No external dependencies — only Python standard library.
 
 ---
 
-## Development Architecture
+## Hard Constraints (Non-Negotiable)
 
-### Layer Model
-
-```
-┌─────────────────────────────────────┐
-│         main.py (integration)       │
-├─────────────────────────────────────┤
-│  Network Layer                       │
-│  client.py  ◄── TCP ──►  server.py  │
-├─────────────────────────────────────┤
-│  Application Logic                   │
-│  sensor_data.py                     │
-├─────────────────────────────────────┤
-│  Cryptography Layer                  │
-│  aes_crypto.py  (AES-128)           │
-│  rsa_crypto.py  (RSA)               │
-│  hmac_auth.py   (HMAC-SHA256)       │
-└─────────────────────────────────────┘
-```
-
-### Dependency Graph
-
-```
-sensor_data.py          (no dependencies)
-aes_crypto.py           (no dependencies)
-rsa_crypto.py           (no dependencies)
-hmac_auth.py            (no dependencies)
-client.py               → sensor_data, aes_crypto, rsa_crypto, hmac_auth
-server.py               → aes_crypto, rsa_crypto, hmac_auth
-main.py                 → all modules
-```
-
-### Feature Flow
-
-1. **Sensor data** is generated as JSON (temperature, humidity, pressure).
-2. **AES-128** encrypts the JSON payload with a randomly generated session key.
-3. **RSA** encrypts the AES session key for secure key exchange.
-4. **HMAC-SHA256** produces an authentication tag over the ciphertext.
-5. **TCP client** sends `[encrypted_payload + hmac_tag]` to the server.
-6. **TCP server** verifies HMAC, decrypts AES, outputs original sensor data.
+1. **One feature at a time.** WIP=1. No skipping ahead.
+2. **Stdlib only.** No external crypto libraries. All algorithms from scratch.
+3. **Evidence, not claims.** Every completed item must reference actual files.
+4. **Verification before completion.** "Code looks fine" != done. Tests must pass.
+5. **No debug artifacts.** Remove console.log, commented code, temp files before session exit.
+6. **Clean state on exit.** Build passes, tests pass, progress updated, no leftover files.
 
 ---
 
-## Git 版本管理策略
+## Feature Development Workflow
 
-### 初始化
+Each feature must complete these steps in order:
 
-```bash
-git init
-echo "__pycache__/".gitignore
-echo "*.pyc" >> .gitignore
-echo ".env" >> .gitignore
-echo "data/" >> .gitignore
-```
+1. Implement code + tests
+2. `python init_check.py` — verify all modules load
+3. `python test_*.py` — run corresponding tests
+4. `make check` — full verification
+5. Update `progress.md` with evidence references
+6. `git commit` with `feat:` prefix
+7. Update `session-handoff.md`
 
-### 分支策略
-
-```
-main          # 稳定版本
-├── develop   # 开发主分支
-    ├── phase/1-sensor-data
-    ├── phase/2-aes-encryption
-    ├── phase/3-rsa-keygen
-    ├── phase/4-hmac-auth
-    ├── phase/5-client-server
-    └── phase/6-integration
-```
-
-**远程仓库地址**：[sprog-man/infomation-safe](https://github.com/sprog-man/infomation-safe.git)
-
-**提交规范：** 使用 `feat:`, `fix:`, `refactor:`, `docs:`, `test:` 前缀。
-
-示例：
-```
-feat: implement sensor data simulation module
-test(aes): add round-trip and padding tests
-fix(hmac): correct HMAC tag computation for empty messages
-docs: update AGENTS.md with directory structure
-```
-
-### 工作流
-
-1. `git checkout -b phase/N-description` 从 `main` 创建开发分支
-2. 本地实现 + 测试，频繁提交
-3. 合并到 `main`：`git checkout main && git merge --no-ff phase/N-description`
-4. 推送到远程：`git push origin main`
+Then start next feature.
 
 ---
 
-## Feature 开发流程（每完成一个 feat 必须依次执行）
+## Verification Commands
 
-每完成一个 feat，**必须严格按以下顺序执行**，不可跳过或颠倒：
-
-1. **实现代码** — 编写模块代码及配套测试
-2. **`python init_check.py`** — 验证所有组件能正常加载
-3. **`python test_*.py`** — 运行对应测试脚本，确保全部通过
-4. **更新 `progress.md`** — 填写证据引用，标注每个 done criteria 对应的文件
-5. **`git commit`** — 使用 `feat:` 前缀提交，记录该 feat 的变更详情
-6. **更新 `session-handoff.md`** — 写入会话交接记录，方便下次恢复
-
-然后才开始下一个 feat。
-
-核心原则：**One feature at a time. Each feature must pass verification before the next begins.**
+| Command | Description |
+|---------|-------------|
+| `make test` | Run all 7 core test scripts (106 tests) |
+| `make web-test` | Run 18 web API tests |
+| `make check-web` | test + e2e + web-test combined (124 tests) |
+| `make e2e` | Run end-to-end pipeline (embedded server) |
+| `make demo` | Run standalone crypto verification |
+| `make check` | test + e2e combined |
+| `make exit` | Session exit checklist (5 dimensions) |
+| `python init_check.py` | Verify project structure & imports |
 
 ---
 
-## Coding Standards
+## Session Workflow
 
-### General Rules
+**On startup (上班):**
+1. Read `progress.md` → know current state
+2. Read `DECISIONS.md` → remember key choices
+3. Run `make check` → verify clean state
+4. Continue from `progress.md` next steps
 
-- **One feature at a time.** Do not skip ahead. Each feature must pass verification before the next begins.
-- **Write evidence, not claims.** Every completed item in `progress.md` must reference actual files that exist.
-- **No external crypto libraries.** Encryption and authentication algorithms MUST be implemented from scratch. Only Python standard library imports allowed.
-- **Self-contained.** The entire project must be runnable without external services. Simulate sensor data in code.
-- **Comments required.** Every algorithm function must have comments explaining its logic.
-
-### Python Style
-
-- Use type hints for all public function signatures.
-- Docstrings: Google-style with Parameters, Returns, Raises sections.
-- Maximum line length: 100 characters.
-- Use `if __name__ == "__main__":` for module-level demos.
+**On exit (下班):**
+1. Run `make check` → verify everything passes
+2. Update `progress.md` → record what was done
+3. Clean up temp files, debug code
+4. Commit all completed work
+5. Update `session-handoff.md`
 
 ---
 
-## Startup Checklist
+## Topic Docs (Read as Needed)
 
-1. Read `feature_list.json` to find the active feature.
-2. Read `progress.md` to understand current state.
-3. Run `python init_check.py` to verify the project builds.
-
----
-
-## Verification
-
-Before claiming any task is done:
-1. Run `python init_check.py` to verify all components load.
-2. Run the corresponding test script (`python test_*.py`).
-3. Update `progress.md` with evidence references.
-
----
-
-## Done Criteria
-
-- Code is self-contained and runnable (`python main.py`).
-- All five experiment sections covered: encryption, decryption, message authentication, network transmission, data collection process.
-- Source code includes comments explaining algorithm logic.
-- `progress.md` updated with file references for each completed item.
-
----
-
-## Session Handoff
-
-At session end, write a handoff entry in `session-handoff.md` so the next session can resume.
+- [Architecture](docs/architecture.md) — layer model, dependency graph
+- [Git Workflow](docs/git-workflow.md) — branching, commits, remote
+- [Dev Process](docs/dev-process.md) — per-feature checklist
+- [Crypto Algorithms](docs/crypto-algorithms.md) — algorithm principles for report

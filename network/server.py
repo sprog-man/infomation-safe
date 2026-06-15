@@ -81,8 +81,12 @@ def receive_frame(conn: socket.socket, key_bytes: int = 256) -> tuple:
     Returns
     -------
     tuple
-        (encrypted_aes_key, hmac_tag, ciphertext)
+        (encrypted_aes_key, hmac_tag, ciphertext, raw_frame)
+        raw_frame is the complete captured byte stream (for packet capture).
     """
+    # Capture raw bytes for packet capture
+    raw_frame = b""
+
     # Receive RSA-encrypted AES key
     remaining = key_bytes
     encrypted_key = b""
@@ -90,6 +94,7 @@ def receive_frame(conn: socket.socket, key_bytes: int = 256) -> tuple:
         chunk = conn.recv(remaining)
         if not chunk:
             raise ConnectionError("Connection closed while receiving encrypted key")
+        raw_frame += chunk
         encrypted_key += chunk
         remaining -= len(chunk)
 
@@ -100,6 +105,7 @@ def receive_frame(conn: socket.socket, key_bytes: int = 256) -> tuple:
         chunk = conn.recv(remaining)
         if not chunk:
             raise ConnectionError("Connection closed while receiving HMAC length")
+        raw_frame += chunk
         hmac_len_bytes += chunk
         remaining -= len(chunk)
     hmac_len = int.from_bytes(hmac_len_bytes, "big")
@@ -111,6 +117,7 @@ def receive_frame(conn: socket.socket, key_bytes: int = 256) -> tuple:
         chunk = conn.recv(remaining)
         if not chunk:
             raise ConnectionError("Connection closed while receiving HMAC tag")
+        raw_frame += chunk
         hmac_tag += chunk
         remaining -= len(chunk)
 
@@ -122,15 +129,16 @@ def receive_frame(conn: socket.socket, key_bytes: int = 256) -> tuple:
             chunk = conn.recv(4096)
             if not chunk:
                 break
+            raw_frame += chunk
             ciphertext += chunk
     except socket.timeout:
         pass
     conn.settimeout(None)
 
-    return encrypted_key, hmac_tag, ciphertext
+    return encrypted_key, hmac_tag, ciphertext, raw_frame
 
 
-def handle_client(conn: socket.socket, private_key: dict) -> None:
+def handle_client(conn: socket.socket, private_key: dict) -> dict:
     """
     Handle a single client connection: receive, verify, decrypt, output.
 
@@ -140,10 +148,25 @@ def handle_client(conn: socket.socket, private_key: dict) -> None:
         Connected client socket.
     private_key : dict
         RSA private key for decrypting the AES session key.
+
+    Returns
+    -------
+    dict
+        Result with keys: accepted (bool), sensor_data (dict|None),
+        capture_hex (str|None), frame_size (int|None), error (str|None)
     """
+    result = {
+        "accepted": False,
+        "sensor_data": None,
+        "capture_hex": None,
+        "frame_size": 0,
+        "error": None,
+    }
     try:
         # Step 1: Receive the frame
-        encrypted_key, hmac_tag, ciphertext = receive_frame(conn)
+        encrypted_key, hmac_tag, ciphertext, raw_frame = receive_frame(conn)
+        result["frame_size"] = len(raw_frame)
+        result["capture_hex"] = raw_frame.hex()
         key_bytes = (private_key["n"].bit_length() + 7) // 8
 
         # Step 2: Decrypt AES session key with RSA
@@ -155,13 +178,16 @@ def handle_client(conn: socket.socket, private_key: dict) -> None:
         if not is_valid:
             print("  [FAIL] HMAC verification failed — message may be tampered!")
             conn.sendall(b"REJECT")
-            return
+            result["error"] = "HMAC verification failed"
+            return result
 
         # Step 4: Decrypt AES ciphertext
         plaintext = aes_decrypt(ciphertext, session_key)
 
         # Step 5: Parse and output sensor data
         sensor_data = json.loads(plaintext.decode("utf-8"))
+        result["sensor_data"] = sensor_data
+        result["accepted"] = True
         print("  [OK] HMAC verified. Decrypted sensor data:")
         print(json.dumps(sensor_data, indent=2, ensure_ascii=False))
 
@@ -169,13 +195,18 @@ def handle_client(conn: socket.socket, private_key: dict) -> None:
 
     except ConnectionError as e:
         print(f"  [FAIL] Connection error: {e}")
+        result["error"] = str(e)
     except Exception as e:
         print(f"  [FAIL] Error handling client: {e}")
+        result["error"] = str(e)
     finally:
         conn.close()
 
+    return result
 
-def run_server(host: str = "127.0.0.1", port: int = 9999) -> None:
+
+def run_server(host: str = "127.0.0.1", port: int = 9999,
+               save_dir: str = "captures") -> None:
     """
     Start the TCP server and listen for incoming connections.
 
@@ -185,6 +216,8 @@ def run_server(host: str = "127.0.0.1", port: int = 9999) -> None:
         Bind address (default: 127.0.0.1).
     port : int
         Bind port (default: 9999).
+    save_dir : str
+        Directory to save captured packets and sensor data files.
     """
     print(f"[*] Server starting on {host}:{port}")
     print(f"[*] Loading RSA private key...")
@@ -197,12 +230,33 @@ def run_server(host: str = "127.0.0.1", port: int = 9999) -> None:
     server.bind((host, port))
     server.listen(1)
 
+    # Create save directory
+    os.makedirs(save_dir, exist_ok=True)
+
     try:
+        conn_count = 0
         while True:
             conn, addr = server.accept()
-            print(f"\n[INFO] Connection from {addr}")
-            handle_client(conn, private_key)
-            print(f"[INFO] Connection from {addr} closed\n")
+            conn_count += 1
+            print(f"\n[INFO] Connection #{conn_count} from {addr}")
+            result = handle_client(conn, private_key)
+
+            # Save captured packet
+            if result["capture_hex"]:
+                cap_file = os.path.join(save_dir, f"capture_{conn_count:04d}.hex")
+                with open(cap_file, "w") as f:
+                    f.write(result["capture_hex"])
+                print(f"  [SAVE] Captured packet saved to {cap_file} "
+                      f"({result['frame_size']} bytes)")
+
+            # Save sensor data
+            if result["sensor_data"]:
+                data_file = os.path.join(save_dir, f"sensor_{conn_count:04d}.json")
+                with open(data_file, "w") as f:
+                    json.dump(result["sensor_data"], f, indent=2, ensure_ascii=False)
+                print(f"  [SAVE] Sensor data saved to {data_file}")
+
+            print(f"[INFO] Connection #{conn_count} from {addr} closed\n")
     except KeyboardInterrupt:
         print("\n[*] Server shutting down...")
     finally:
