@@ -64,6 +64,33 @@
                 <div class="phase-detail">Total time: ${data.total_time_s}s</div>
             `;
             container.appendChild(totalDiv);
+
+            // Update wire frame bars based on actual data
+            const tcpPhase = data.phases.find(p => p.phase.includes("TCP"));
+            if (tcpPhase && tcpPhase.details) {
+                const d = tcpPhase.details;
+                if (d.frame_size) {
+                    const barCt = Math.max(d.frame_size - 256 - 4 - 32, 20);
+                    $("bar-ciphertext").style.width = Math.min(barCt, 300) + "px";
+                    $("bar-ciphertext").textContent = `CT (${d.frame_size - 292}B)`;
+                }
+            }
+            $("wireframe").style.display = "block";
+
+            // Show capture panel if we have data
+            if (tcpPhase && (tcpPhase.details?.capture_hex || tcpPhase.decrypted_sensor_data)) {
+                $("e2e-auto-capture-panel").style.display = "block";
+
+                if (tcpPhase.details?.capture_hex) {
+                    $("e2e-auto-capture-hex").textContent = tcpPhase.details.capture_hex;
+                }
+                if (tcpPhase.decrypted_sensor_data) {
+                    $("e2e-auto-decrypted-data").textContent = JSON.stringify(tcpPhase.decrypted_sensor_data, null, 2);
+                }
+            }
+
+            // Show key exchange diagram
+            $("e2e-auto-key-exchange").style.display = "block";
         } catch (e) {
             container.innerHTML = '<div class="phase-item fail"><p>Error: ' + escapeHtml(e.message) + "</p></div>";
         }

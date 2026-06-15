@@ -107,12 +107,68 @@
                     <div class="frame-bar" id="bar-ciphertext" style="width:100px;background:#9b59b6;" title="Ciphertext: variable">CT</div>
                 </div>
             </div>
+
+            <!-- Capture Output -->
+            <div class="capture-panel" id="pipeline-capture-panel" style="display:none;">
+                <h3>📦 抓包结果</h3>
+                <div class="capture-grid">
+                    <div class="capture-card">
+                        <h4>原始 TCP 帧 (Hex)</h4>
+                        <pre id="pipeline-capture-hex" class="capture-hex-output"></pre>
+                    </div>
+                    <div class="capture-card">
+                        <h4>解密后数据</h4>
+                        <pre id="pipeline-decrypted-data" class="capture-decrypted-output"></pre>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Tab 2: Crypto Playground -->
         <section id="tab-playground" class="tab-content">
             <h2>Crypto Playground</h2>
             <p class="hint">独立操作每个密码学组件，快速验证算法行为。</p>
+
+            <div class="guide-panel">
+                <h3>📖 操作步骤</h3>
+                <div class="guide-steps">
+                    <div class="guide-step">
+                        <span class="guide-num">1</span>
+                        <div>
+                            <strong>生成密钥</strong>
+                            <p>在 "RSA Key Generation" 卡片中，选择密钥长度（512/1024/2048），点击 Generate Keypair。公钥和私钥会显示在下方输入框中。</p>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <span class="guide-num">2</span>
+                        <div>
+                            <strong>AES 加密</strong>
+                            <p>在 "AES-128 Encrypt/Decrypt" 卡片中输入任意文本，点击 Encrypt。密文会以 hex 形式显示在下方输入框中。</p>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <span class="guide-num">3</span>
+                        <div>
+                            <strong>AES 解密</strong>
+                            <p>保持上一步的密文不变，点击 Decrypt。结果会显示在 Result 区域，应与原文一致。</p>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <span class="guide-num">4</span>
+                        <div>
+                            <strong>HMAC 认证</strong>
+                            <p>在 "HMAC-SHA256" 卡片中，先用 Key 和 Message 计算签名 (Compute)，然后用相同参数验证 (Verify)。也可以故意改一个字符测试验证失败。</p>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <span class="guide-num">5</span>
+                        <div>
+                            <strong>快速验证</strong>
+                            <p>"Quick Roundtrip" 卡片一键完成 AES 加密→解密，验证原文与解密结果是否匹配。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="playground-grid">
                 <!-- AES Encrypt/Decrypt -->
@@ -199,6 +255,60 @@
                 <label>Reading Count: <input type="number" id="e2e-auto-count" value="3" min="1" max="100"></label>
                 <button id="btn-e2e-auto-run" class="btn btn-large btn-primary">Run Full E2E Pipeline</button>
                 <div id="e2e-auto-phases" class="phases-container"></div>
+
+                <!-- Packaged Capture Display -->
+                <div id="e2e-auto-capture-panel" class="capture-panel" style="display:none;">
+                    <h3>📦 抓包结果</h3>
+                    <div class="capture-grid">
+                        <div class="capture-card">
+                            <h4>原始 TCP 帧 (Hex)</h4>
+                            <pre id="e2e-auto-capture-hex" class="capture-hex-output"></pre>
+                        </div>
+                        <div class="capture-card">
+                            <h4>解密后数据</h4>
+                            <pre id="e2e-auto-decrypted-data" class="capture-decrypted-output"></pre>
+                        </div>
+                    </div>
+                    <div class="frame-diagram" id="e2e-auto-frame-diagram">
+                        <h4>Wire Frame 结构</h4>
+                        <div class="frame-bars">
+                            <div class="frame-bar" id="bar-enc-key" style="width:256px;background:#e74c3c;">RSA Enc Key (256B)</div>
+                            <div class="frame-bar" id="bar-hmac-len" style="width:4px;background:#3498db;">Len(4B)</div>
+                            <div class="frame-bar" id="bar-hmac-tag" style="width:32px;background:#2ecc71;">HMAC(32B)</div>
+                            <div class="frame-bar" id="bar-ciphertext" style="width:100px;background:#9b59b6;">Ciphertext</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Exchange Diagram -->
+                <div id="e2e-auto-key-exchange" class="key-exchange-panel" style="display:none;">
+                    <h3>🔑 密钥交换过程</h3>
+                    <div class="key-exchange-steps">
+                        <div class="ke-step">
+                            <div class="ke-side ke-left">
+                                <h4>发送端 (Client)</h4>
+                                <ol>
+                                    <li>生成 16 字节随机 AES 会话密钥</li>
+                                    <li>AES-128 加密传感器数据 → 密文</li>
+                                    <li>RSA 公钥加密 AES 密钥 → 256 字节</li>
+                                    <li>HMAC-SHA256 计算密文签名</li>
+                                    <li>打包发送: [RSA密文|HMAC长度|HMAC|密文]</li>
+                                </ol>
+                            </div>
+                            <div class="ke-arrow">───── TCP ─────> </div>
+                            <div class="ke-side ke-right">
+                                <h4>接收端 (Server)</h4>
+                                <ol>
+                                    <li>接收 TCP 帧</li>
+                                    <li>RSA 私钥解密 → 恢复 16 字节 AES 密钥</li>
+                                    <li>HMAC-SHA256 验证签名</li>
+                                    <li>AES-128 解密密文 → 原始传感器数据</li>
+                                    <li>发送 "ACCEPT"</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

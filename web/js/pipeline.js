@@ -158,6 +158,20 @@
             if (res.success) {
                 setStatus("step-tcp", "success");
                 updateWireframe(state.encryptedKeyHex, state.hmacTag, state.ciphertextHex);
+
+                // Show capture panel
+                const tcpPhase = res.phases.find(p => p.phase.includes("TCP"));
+                if (tcpPhase) {
+                    const capPanel = $("pipeline-capture-panel");
+                    capPanel.style.display = "block";
+
+                    if (tcpPhase.details?.capture_hex) {
+                        $("pipeline-capture-hex").textContent = tcpPhase.details.capture_hex;
+                    }
+                    if (tcpPhase.decrypted_sensor_data) {
+                        $("pipeline-decrypted-data").textContent = JSON.stringify(tcpPhase.decrypted_sensor_data, null, 2);
+                    }
+                }
             } else {
                 setStatus("step-tcp", "fail");
             }
