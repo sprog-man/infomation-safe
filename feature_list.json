@@ -143,7 +143,7 @@
         "All 6 test scripts pass: 15+23+28+20+9+4 = 99 tests total",
         "Standalone demo and E2E pipeline both verified with real output"
       ]
-    }
+    },
     {
       "id": "feat-008",
       "name": "Web Frontend",
