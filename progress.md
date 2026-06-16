@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Active Feature:** feat-008 (Web Frontend)
+**Active Feature:** harness-engineering-upgrade
 **Status:** Completed
 **Last Updated:** 2026-06-15
 
@@ -11,7 +11,7 @@
 ## feat-008: Web Frontend ✅
 
 **Status:** Completed
-**Date:** 2026-06-15
+**Date:** 2026-06-16
 
 **Added browser-based UI with zero external dependencies.**
 
@@ -26,10 +26,10 @@
 
 ### Files Modified
 - `Makefile` — added `web`, `web-test`, `check-web` targets
-- `feature_list.json` — v2.0 → v2.1. Added feat-008, total_tests: 106→119
-- `AGENTS.md` — updated test count (106→119), added web commands, added web/ to directory structure
+- `feature_list.json` — v2.0 → v2.1. Added feat-008, total_tests: 106→124
+- `AGENTS.md` — updated test count (106→124), added web commands, added web/ to directory structure
 - `DECISIONS.md` — added ADR for web frontend architecture
-- `progress.md` — this file
+- `network/server.py` — enhanced `receive_frame()` to record raw TCP bytes, `handle_client()` returns structured dict with capture_hex
 
 ### Test Count
 - Before: 106 tests (7 scripts)
@@ -39,7 +39,7 @@
 - [x] Web UI accessible at http://localhost:8080
 - [x] Four tabs: Pipeline Wizard, Crypto Playground, E2E Auto, E2E Manual
 - [x] All 9 API endpoints functional
-- [x] 13 HTTP API tests passing
+- [x] 18 HTTP API tests passing
 - [x] Zero external dependencies — stdlib http.server + vanilla JS
 
 ---
