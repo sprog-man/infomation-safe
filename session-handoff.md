@@ -16,6 +16,42 @@
 5. Update `session-handoff.md`
 
 ---
+## Session: 2026-06-16 — Harness Optimization + feat-009/010 Finalization
+
+### Completed This Session
+- **feat-009/010** weather pipeline + C/S split committed and pushed
+- **done_check.py** — Pre-commit doc sync verifier (progress.md, feature_list.json, DECISIONS.md, debug artifacts, git state)
+- **lint_check.py** — Zero-dependency lint (ast.parse + py_compile, stdlib only)
+- **hooks/pre-commit** — Git hook auto-runs done_check.py on every commit
+- **exit_check.py** — Synced artifact detection (print(), JS debug patterns)
+- **Makefile** — Added `lint`, `done`, `setup-hooks` targets; `check` now = lint+test+e2e
+- **init_check.py** — REQUIRED_FILES expanded from 4 to 12
+- **.gitignore** — Fixed UTF-16LE corruption, added captures/ and *.key
+- **BOM stripping** — Removed UTF-8 BOM from 13 Python files
+- **AGENTS.md** — Updated workflow, commands table, session workflow
+- **DECISIONS.md** — Added ADR entries for receiver-generated keys
+- **.github/workflows/ci.yml** — GitHub Actions CI (Python 3.9-3.12)
+
+### Current Status
+- **All 10 features** completed, committed, and pushed to remote
+- **40 files** in last commit, 4612 insertions
+- **Test count:** 151 core + 18 web = 169 total
+- **New harness commands:** `make lint`, `make done`, `make setup-hooks`
+- **Git remote:** https://github.com/sprog-man/infomation-safe.git
+
+### What to Do Next
+- Project is feature-complete. Future sessions can focus on:
+  - Cleaning up 46 debug `print()` calls detected in core modules
+  - Experiment report content in `docs/crypto-algorithms.md`
+  - Any follow-up tasks
+
+### Known Issues / Notes
+- Pre-commit hook requires `make setup-hooks` on fresh clone
+- `make check` now runs lint (ast parse + compile) which adds ~2s
+- 46 debug `print()` warnings — evaluate which are intentional demo output vs debug residue
+- Write tool on this Windows system adds UTF-8 BOM; `lint_check.py` has built-in tolerance
+
+---
 
 ## Session: 2026-06-15 — feat-008 (Web Frontend)
 
