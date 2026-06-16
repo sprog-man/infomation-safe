@@ -13,15 +13,12 @@ All crypto implemented from scratch. Zero external dependencies.
 
 ```bash
 python init_check.py       # Verify project structure & imports
-make test                  # Run all 11 core test scripts (151 tests)
+make test                  # Run all 10 core test scripts (133 tests)
 make lint                  # Syntax + compilation check (stdlib, zero deps)
-make web-test              # Run 18 web API tests
 make check                 # Full verification (lint + test + e2e)
-make check-web             # Full verification including web
 make exit                  # Session exit checklist (5 dimensions)
 make demo                  # Standalone crypto demo (no server)
 make e2e                   # End-to-end pipeline (embedded server)
-make web                   # Start original unified UI at http://localhost:8080
 make receiver              # Start receiver → generates RSA keypair, serves on 8081, TCP 9999
 make sender                # Start sender → fetches RSA key from receiver, serves on 8080
 make done                  # Pre-commit doc sync check (progress.md, DECISIONS.md)
@@ -33,7 +30,7 @@ python main.py             # Default: demo + e2e
 
 The project supports two modes:
 
-1. **Unified (original)**: `python server_api.py` — single process with embedded TCP server, all features in one port (8080).
+1. **Unified (original)**: `python server_api.py` — single process with embedded TCP server, all features in one port (8080). *(deprecated — use C/S split instead)*
 2. **C/S Split (recommended)**: Two independent processes:
    - **Sender** (`python sender_api.py`, port 8080) — RSA public key only. Weather fetch → AES encrypt → TCP transmit.
    - **Receiver** (`python receiver_api.py`, port 8081 + TCP 9999) — RSA private key only. TCP receive → HMAC verify → AES decrypt → PCAP.
@@ -63,19 +60,14 @@ infomation-safety2/
 ├── Makefile               ← Standardized commands
 ├── init_check.py          ← Project initialization verifier
 ├── main.py                ← Entry point (demo / e2e modes)
-├── server_api.py          ← Unified web UI (original, port 8080)
+├── server_api.py          ← deprecated (unified web UI, use sender/receiver instead)
 ├── sender_api.py          ← Sender web UI (C/S split, port 8080)
 ├── receiver_api.py        ← Receiver web UI + TCP (C/S split, port 8081)
-├── test_server_api.py     ← 18 web API tests
 ├── web/                   ← Web frontend (vanilla HTML/CSS/JS)
-│   ├── index.html         ← Unified UI (original)
 │   ├── sender.html        ← Sender UI (C/S split)
 │   ├── receiver.html      ← Receiver UI (C/S split)
 │   ├── css/style.css
 │   └── js/
-│       ├── pipeline.js
-│       ├── crypto.js
-│       ├── app.js
 │       ├── weather.js
 │       ├── sender.js       ← Sender logic (C/S split)
 │       └── receiver.js     ← Receiver logic (C/S split)
@@ -146,10 +138,8 @@ git commit                   # ② Hook auto-runs done_check.py again — safety
 
 | Command | Description |
 |---------|-------------|
-| `make test` | Run all 11 core test scripts (151 tests) |
+| `make test` | Run all 10 core test scripts (133 tests) |
 | **`make lint`** | **Syntax + compilation check (stdlib ast + py_compile)** |
-| `make web-test` | Run 18 web API tests |
-| `make check-web` | test + e2e + web-test combined (169 tests) |
 | `make e2e` | Run end-to-end pipeline (embedded server) |
 | `make demo` | Run standalone crypto verification |
 | **`make check`** | **lint + test + e2e combined** |

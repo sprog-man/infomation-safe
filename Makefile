@@ -1,4 +1,4 @@
-.PHONY: test e2e demo check exit clean web web-test check-web sender receiver done setup-hooks lint
+.PHONY: test e2e demo check exit clean sender receiver done setup-hooks lint
 
 PYTHON := python
 TESTS := test_sensor.py test_aes.py test_rsa.py test_hmac.py test_client.py test_server.py test_end_to_end.py test_weather_data.py test_weather_pipeline.py test_pcap.py
@@ -49,11 +49,6 @@ clean:
 	@rm -rf .coverage htmlcov 2>/dev/null || true
 	@echo "Done."
 
-# Start web frontend (http://localhost:8080)
-web:
-	@echo "Starting web frontend on http://127.0.0.1:8080..."
-	@$(PYTHON) server_api.py
-
 # Start sender (http://localhost:8080) — C/S split architecture
 # Note: Receiver must be started first (sender fetches RSA public key from receiver)
 sender:
@@ -70,11 +65,6 @@ receiver:
 	@echo "  Receiver TCP on 127.0.0.1:9999..."
 	@echo "  RSA keypair will be generated automatically (may take a few seconds)"
 	@$(PYTHON) receiver_api.py --port=8081 --tcp-port=9999
-
-# Pre-generate RSA keypair for C/S split architecture
-crypto-setup:
-	@echo "Generating 2048-bit RSA keypair..."
-	@$(PYTHON) -c "import sys; sys.path.insert(0, '.'); from crypto.rsa_crypto import generate_keypair, serialize_public_key, serialize_private_key; pub, priv = generate_keypair(2048); open('sender_public.key','wb').write(serialize_public_key(pub)); open('receiver_private.key','wb').write(serialize_private_key(priv)); print('Done: sender_public.key + receiver_private.key')"
 
 # Lint check: syntax + compilation (stdlib only)
 lint:
@@ -93,13 +83,3 @@ setup-hooks:
 	@git config core.hooksPath hooks
 	@echo "Done. hooks/pre-commit will run on every 'git commit'."
 	@echo "Override with: git commit --no-verify"
-
-# Run web API tests
-web-test:
-	@echo "Running web API tests..."
-	@$(PYTHON) test_server_api.py
-
-# Full verification: test + e2e + web-test
-check-web: check web-test
-	@echo ""; \
-	echo "=== Full verification (including web) complete ==="

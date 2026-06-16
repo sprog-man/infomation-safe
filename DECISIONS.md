@@ -85,7 +85,7 @@ Record of important design decisions and their rationale.
   - Receiver TCP handler is a daemon thread using `socketserver.ThreadingTCPServer`
   - Receiver stores latest result in a thread-safe global dict, served via `/api/weather/latest`
 - **Files added**: `sender_api.py`, `receiver_api.py`, `web/sender.html`, `web/receiver.html`, `web/js/sender.js`, `web/js/receiver.js`
-- **Backward compatibility**: `server_api.py` remains unchanged, all 151 existing tests pass
+- **Backward compatibility**: `server_api.py` is deprecated but remains for reference; all 133 core tests pass unchanged
 - **When to revisit**: If TCP needs to handle concurrent connections from multiple senders
 
 ---

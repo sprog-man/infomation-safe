@@ -10,7 +10,7 @@
     "full_verification": "make check",
     "session_exit": "make exit",
     "init_check": "python init_check.py",
-    "total_tests": 151
+    "total_tests": 133
   },
   "features": [
     {
@@ -145,40 +145,11 @@
       ]
     },
     {
-      "id": "feat-008",
-      "name": "Web Frontend",
-      "status": "passing",
-      "description": "Browser-based web UI for the full pipeline: pipeline visualizer, crypto playground, E2E one-click and manual modes. Zero external dependencies — stdlib http.server + vanilla JS.",
-      "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004", "feat-005", "feat-006", "feat-007"],
-      "verification": "make web-test",
-      "done_criteria": [
-        "Web UI accessible at http://localhost:8080",
-        "Four tabs: Pipeline Wizard, Crypto Playground, E2E Auto, E2E Manual",
-        "All 9 API endpoints functional",
-        "18 HTTP API tests passing",
-        "Packet capture: server records raw TCP bytes, saves to captures/*.hex",
-        "File save: sensor data saved to captures/*.json on each received frame",
-        "Frontend displays decrypted sensor data and captured packet hex",
-        "Zero external dependencies — stdlib only"
-      ],
-      "evidence": [
-        "server_api.py — HTTP server + 9 API endpoints + static file serving",
-        "web/index.html — four-tab SPA shell",
-        "web/css/style.css — dark theme styling",
-        "web/js/pipeline.js — pipeline visualizer (5-step chain)",
-        "web/js/crypto.js — crypto playground (6 independent ops)",
-        "web/js/app.js — E2E auto + manual modes",
-        "test_server_api.py — 18 tests (sensor-data, aes-enc, aes-dec, keys, encrypt-key, hmac, verify-hmac, static files, error handling)",
-        "network/server.py — receive_frame now returns raw_frame, handle_client returns structured dict, run_server saves captures/*.hex and sensor_*.json",
-        "server_api.py — _handle_e2e_connection records capture_hex and sensor_data, e2e-full response includes decrypted data"
-      ]
-    },
-    {
       "id": "feat-009",
       "name": "Weather Data Security Pipeline",
       "status": "passing",
       "description": "C/S architecture weather data pipeline: city dropdown → OpenWeatherMap API → Wireshark-like display → AES + RSA + HMAC encryption → TCP transmission → server decrypts → Wireshark-compatible .pcap file → hash comparison.",
-      "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004", "feat-005", "feat-006", "feat-007", "feat-008"],
+      "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004", "feat-005", "feat-006", "feat-007"],
       "verification": "make test",
       "done_criteria": [
         "Web frontend with city dropdown for weather data selection",
@@ -195,8 +166,10 @@
         "data/weather_data.py — fetch_weather, build_http_response, compute_hash, CITIES list",
         "network/weather_client.py — build_weather_frame (fetch → HTTP wrap → AES → RSA → HMAC → frame)",
         "network/weather_server.py — handle_weather_connection + generate_pcap (pure Python struct)",
-        "server_api.py — /api/weather/fetch, /api/weather/send, /api/weather/cities endpoints + /captures/ serving",
-        "web/index.html — 5th tab: Weather 安全传输 with city dropdown, fetch/send buttons, packet tables, hash comparison",
+        "sender_api.py — /api/weather/fetch, /api/weather/send, /api/weather/cities endpoints",
+        "receiver_api.py — /api/weather/latest, /api/weather/pcap, /api/weather/public-key endpoints + /captures/ serving",
+        "web/sender.html — weather tab with city dropdown, fetch/send buttons, packet tables, hash comparison",
+        "web/receiver.html — weather receiver tab with latest data, hex table, PCAP download",
         "web/css/style.css — weather tab styles (packet tables, hash comparison, weather grid)",
         "web/js/weather.js — fetch/send logic, Wireshark-style hex table builder, hash comparison",
         "test_weather_data.py — 12 tests (mock fetch, HTTP response builder, hashing, normalization)",

@@ -33,7 +33,7 @@
 - `DECISIONS.md` — added ADR for C/S split architecture
 
 ### Test Count
-- Existing 151 tests unchanged (all pass)
+- Existing 133 tests unchanged (all pass)
 - feat-010 adds no new test dependencies — verified via e2e manual test
 
 ### Done Criteria Verification:
@@ -64,8 +64,8 @@
 - `test_pcap.py` — 9 PCAP format validation tests
 - `web/js/weather.js` — Weather tab frontend logic (city dropdown, fetch/send, packet tables, hash comparison)
 
-### Files Modified
-- `server_api.py` — added 3 weather API endpoints (`weather/fetch`, `weather/send`, `weather/cities`), captures/ serving
+### Files Modified (historical — weather endpoints moved to sender/receiver in feat-010)
+- `server_api.py` (deprecated) — had weather API endpoints; now in `sender_api.py` + `receiver_api.py`
 - `web/index.html` — added 5th tab: Weather 安全传输
 - `web/css/style.css` — weather tab styles (packet tables, hash comparison, weather grid)
 - `Makefile` — added weather test scripts to TESTS variable
@@ -85,89 +85,6 @@
 - [x] Real .pcap file generation (Wireshark-compatible) with HTTP response content
 - [x] Hash comparison between client and server data
 - [x] PCAP download link in web UI
-
----
-
-## feat-008: Web Frontend ✅
-
-**Status:** Completed
-**Date:** 2026-06-16
-
-**Added browser-based UI with zero external dependencies.**
-
-### New Files Created
-- `server_api.py` — HTTP server + 9 JSON API endpoints + static file serving
-- `test_server_api.py` — 18 HTTP API tests
-- `web/index.html` — four-tab SPA shell (Pipeline / Playground / E2E Auto / E2E Manual)
-- `web/css/style.css` — dark theme styling
-- `web/js/pipeline.js` — pipeline visualizer (5-step chain)
-- `web/js/crypto.js` — crypto playground (6 independent operations)
-- `web/js/app.js` — E2E auto + manual modes
-
-### Files Modified
-- `Makefile` — added `web`, `web-test`, `check-web` targets
-- `feature_list.json` — v2.0 → v2.1. Added feat-008, total_tests: 106→124
-- `AGENTS.md` — updated test count (106→124), added web commands, added web/ to directory structure
-- `DECISIONS.md` — added ADR for web frontend architecture
-- `network/server.py` — enhanced `receive_frame()` to record raw TCP bytes, `handle_client()` returns structured dict with capture_hex
-
-### Test Count
-- Before: 106 tests (7 scripts)
-- After: 124 tests (8 scripts) — +18 from `test_server_api.py`
-
-**Done Criteria Verification:**
-- [x] Web UI accessible at http://localhost:8080
-- [x] Four tabs: Pipeline Wizard, Crypto Playground, E2E Auto, E2E Manual
-- [x] All 9 API endpoints functional
-- [x] 18 HTTP API tests passing
-- [x] Zero external dependencies — stdlib http.server + vanilla JS
-
----
-
-## Harness Engineering Upgrade ✅
-
-**Status:** Completed
-**Date:** 2026-06-15
-
-**Upgraded based on 12-chapter Harness Engineering methodology:**
-
-### New Files Created
-- `Makefile` — standardized commands: `setup`, `test`, `e2e`, `demo`, `check`, `exit`, `clean`
-- `exit_check.py` — session exit checklist (5 dimensions: build, tests, progress, artifacts, startup)
-- `DECISIONS.md` — 6 architecture decisions with rationale and alternatives
-- `test_end_to_end.py` — 7 integration tests (roundtrip, tamper rejection, frame bounds, multi-batch)
-- `docs/architecture.md` — layer model, dependency graph, wire frame format
-- `docs/git-workflow.md` — branching strategy, commit conventions, ACID principles
-- `docs/dev-process.md` — per-feature checklist, quality gates
-- `docs/crypto-algorithms.md` — algorithm principles (AES/RSA/HMAC) for experiment report
-- `docs/experiment-report.md` — full experiment report matching all 5 required sections
-
-### Files Modified
-- `AGENTS.md` — 210 lines → 120 lines. Moved低频信息 to `docs/`. Updated test count (99→106).
-- `feature_list.json` — v1.0 → v2.0. Added `verification` commands, `total_tests: 106`.
-- `session-handoff.md` — rewrote with session workflow + actual handoff entries.
-
-### Files Removed
-- `test_sensor_prefix.py` — empty stub, cleanup
-
-### Test Count
-- Before: 99 tests (6 scripts)
-- After: 106 tests (7 scripts) — +7 from `test_end_to_end.py`
-
-**Upgraded based on experiment requirements:**
-
-### Enhancements Added
-- **Packet capture**: `receive_frame()` now records raw TCP bytes; `handle_client()` returns structured dict with `capture_hex`
-- **File save**: `run_server()` saves captured packets to `captures/*.hex` and sensor data to `captures/*.json`
-- **Frontend display**: E2E Auto tab now shows decrypted sensor data and captured packet hex in the UI
-- `server_api.py`: `_handle_e2e_connection()` records capture data, `handle_e2e_full()` includes `decrypted_sensor_data` and `capture_hex` in response
-
-### Done Criteria Verification:
-- [x] Packet capture — raw TCP bytes recorded and saved to `captures/*.hex`
-- [x] File save — sensor data saved to `captures/*.json` on each received frame
-- [x] Frontend shows decrypted data and capture hex in E2E Auto tab
-- [x] All 18 web API tests passing
-- [x] All 106 core tests passing (no regression)
 
 ---
 
