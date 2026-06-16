@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Verify project structure
+        run: python init_check.py
+
+      - name: Lint check (syntax + compile)
+        run: python lint_check.py
+
+      - name: Run unit tests
+        run: |
+          for t in test_sensor.py test_aes.py test_rsa.py test_hmac.py \
+                   test_client.py test_server.py test_end_to_end.py \
+                   test_weather_data.py test_weather_pipeline.py test_pcap.py; do
+            echo "==> $t"
+            python "$t" || exit 1
+          done
+
+      - name: Run end-to-end pipeline
+        run: python main.py --e2e
+
+      - name: Run standalone demo
+        run: python main.py --demo
+
+      - name: Run exit checklist
+        run: python exit_check.py

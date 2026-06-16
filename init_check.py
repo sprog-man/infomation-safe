@@ -1,4 +1,4 @@
-﻿"""
+"""
 init_check.py - Project initialization and verification script.
 
 Run this before starting work to verify the project structure and
@@ -17,7 +17,15 @@ REQUIRED_FILES = [
     "AGENTS.md",
     "feature_list.json",
     "progress.md",
+    "DECISIONS.md",
+    "session-handoff.md",
+    "Makefile",
+    ".gitignore",
     "init_check.py",
+    "done_check.py",
+    "lint_check.py",
+    "exit_check.py",
+    "hooks/pre-commit",
 ]
 
 MODULE_FILES = [

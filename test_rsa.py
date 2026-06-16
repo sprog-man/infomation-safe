@@ -1,4 +1,4 @@
-﻿"""
+"""
 test_rsa.py - Validate RSA key generation, encryption, and decryption.
 
 Run with: python test_rsa.py

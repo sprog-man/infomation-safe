@@ -40,10 +40,13 @@ from socketserver import ThreadingMixIn
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from data.sensor_data import generate_batch, SENSOR_IDS
+from data.weather_data import fetch_weather, build_http_response, compute_hash, CITIES as WEATHER_CITIES
 from crypto.aes_crypto import aes_encrypt, aes_decrypt
 from crypto.rsa_crypto import generate_keypair, rsa_encrypt, rsa_decrypt, serialize_public_key, serialize_private_key, deserialize_public_key, deserialize_private_key
 from auth.hmac_auth import compute_tag, verify_tag
 from network.client import build_frame, send_frame, pack_frame, load_or_generate_keys
+from network.weather_client import build_weather_frame
+from network.weather_server import handle_weather_connection, generate_pcap
 
 
 # ---------------------------------------------------------------------------
@@ -523,6 +526,182 @@ def _handle_e2e_connection(conn, private_key):
 
 
 # ---------------------------------------------------------------------------
+# Weather API handlers
+# ---------------------------------------------------------------------------
+
+def handle_weather_fetch(body: dict) -> dict:
+    """Fetch weather data for a city and return raw JSON + HTTP response."""
+    city = body.get("city", "Beijing")
+    api_key = body.get("api_key", "")
+
+    if not city:
+        return {"error": "city is required"}
+
+    # Fetch weather data
+    raw_json_bytes = fetch_weather(city, api_key)
+    raw_json_str = raw_json_bytes.decode("utf-8")
+    raw_hash = compute_hash(raw_json_bytes)
+
+    # Build HTTP response wrapper
+    http_response_bytes = build_http_response(raw_json_bytes)
+    http_response_hash = compute_hash(http_response_bytes)
+
+    return {
+        "city": city,
+        "raw_json": raw_json_str,
+        "raw_json_hex": raw_json_bytes.hex(),
+        "raw_json_hash": raw_hash,
+        "http_response_hex": http_response_bytes.hex(),
+        "http_response_hash": http_response_hash,
+    }
+
+
+def handle_weather_send(body: dict) -> dict:
+    """Full weather pipeline: fetch → encrypt → send → decrypt → pcap."""
+    city = body.get("city", "Beijing")
+    api_key = body.get("api_key", "")
+
+    if not city:
+        return {"error": "city is required"}
+
+    phases = []
+    t0 = time.monotonic()
+
+    # Phase 1: Key generation
+    try:
+        t = time.monotonic()
+        public_key, private_key = generate_keypair(2048)
+        phases.append({
+            "phase": "Key Generation (RSA-2048)",
+            "status": "success",
+            "time_s": round(time.monotonic() - t, 3),
+            "details": {
+                "modulus_bits": public_key["n"].bit_length(),
+                "public_exponent": public_key["e"],
+            },
+        })
+    except Exception as e:
+        phases.append({"phase": "Key Generation", "status": "fail", "error": str(e)})
+        return {"phases": phases, "success": False, "total_time_s": round(time.monotonic() - t0, 3)}
+
+    # Phase 2: Fetch weather
+    try:
+        t = time.monotonic()
+        raw_json_bytes = fetch_weather(city, api_key)
+        raw_json_str = raw_json_bytes.decode("utf-8")
+        raw_hash = compute_hash(raw_json_bytes)
+        phases.append({
+            "phase": "Weather Data Fetch",
+            "status": "success",
+            "time_s": round(time.monotonic() - t, 3),
+            "details": {
+                "city": city,
+                "source": json.loads(raw_json_str).get("source", "unknown"),
+                "size_bytes": len(raw_json_bytes),
+                "hash": raw_hash,
+            },
+        })
+    except Exception as e:
+        phases.append({"phase": "Weather Data Fetch", "status": "fail", "error": str(e)})
+        return {"phases": phases, "success": False, "total_time_s": round(time.monotonic() - t0, 3)}
+
+    # Phase 3: Encrypt (AES + RSA + HMAC) + TCP
+    try:
+        t = time.monotonic()
+
+        _weather_result = {}
+        _weather_lock = threading.Lock()
+
+        class _WeatherHandler(socketserver.BaseRequestHandler):
+            def handle(self):
+                try:
+                    result = handle_weather_connection(self.request, private_key)
+                    with _weather_lock:
+                        _weather_result.clear()
+                        _weather_result.update(result)
+                    if result["accepted"]:
+                        self.request.sendall(b"ACCEPT")
+                    else:
+                        self.request.sendall(b"REJECT")
+                except Exception:
+                    try:
+                        self.request.sendall(b"REJECT")
+                    except Exception:
+                        pass
+
+        class _ThreadedServer(socketserver.ThreadingTCPServer):
+            allow_reuse_address = True
+            daemon_threads = True
+
+        server = _ThreadedServer(("127.0.0.1", 0), _WeatherHandler)
+        srv_thread = threading.Thread(target=server.serve_forever, daemon=True)
+        srv_thread.start()
+        time.sleep(0.2)
+        srv_port = server.server_address[1]
+
+        # Build weather frame
+        frame_info = build_weather_frame(city, api_key, public_key)
+        frame = frame_info["frame"]
+
+        try:
+            response = send_frame("127.0.0.1", srv_port, frame, timeout=10.0)
+            phases[-1]["status"] = "success" if response == "ACCEPT" else "fail"
+            phases[-1]["details"]["server_response"] = response
+            phases[-1]["details"]["frame_size"] = len(frame)
+
+            # Client-side capture
+            phases[-1]["details"]["client_capture_hex"] = frame.hex()[:200]
+            phases[-1]["details"]["client_md5"] = compute_hash(frame)["md5"]
+
+            # Get server result
+            with _weather_lock:
+                srv_result = dict(_weather_result)
+
+        except Exception as e:
+            phases[-1]["status"] = "fail"
+            phases[-1]["error"] = str(e)
+            srv_result = {}
+        finally:
+            server.shutdown()
+            server.server_close()
+            srv_thread.join(timeout=3)
+
+        # Add server-side capture
+        if srv_result.get("accepted"):
+            phases[-1]["details"]["server_capture_hex"] = srv_result.get("capture_hex", "")
+            phases[-1]["details"]["json_data"] = srv_result.get("json_data")
+            phases[-1]["details"]["json_hash"] = srv_result.get("hash")
+            phases[-1]["details"]["decrypted_json_hex"] = srv_result.get("json_hex")
+
+            # Generate PCAP
+            json_bytes = json.dumps(
+                srv_result["json_data"], ensure_ascii=False, indent=2
+            ).encode("utf-8")
+            pcap_path = generate_pcap(json_bytes, city, "captures")
+            phases[-1]["details"]["pcap_file"] = pcap_path
+        else:
+            phases[-1]["details"]["error"] = srv_result.get("error", "Unknown error")
+
+    except Exception as e:
+        phases.append({"phase": "Weather Encrypt + TCP", "status": "fail", "error": str(e)})
+        return {"phases": phases, "success": False, "total_time_s": round(time.monotonic() - t0, 3)}
+
+    success = all(p["status"] == "success" for p in phases)
+    total_time = round(time.monotonic() - t0, 3)
+
+    return {
+        "phases": phases,
+        "success": success,
+        "total_time_s": total_time,
+    }
+
+
+def handle_weather_cities(body: dict) -> dict:
+    """Return list of available cities."""
+    return {"cities": WEATHER_CITIES}
+
+
+# ---------------------------------------------------------------------------
 # HTTP Handler
 # ---------------------------------------------------------------------------
 
@@ -536,6 +715,9 @@ _API_HANDLERS = {
     "verify-hmac": handle_verify_hmac,
     "send": handle_send,
     "e2e-full": handle_e2e_full,
+    "weather/fetch": handle_weather_fetch,
+    "weather/send": handle_weather_send,
+    "weather/cities": handle_weather_cities,
 }
 
 _WEB_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
@@ -558,13 +740,15 @@ class WebHandler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self):
-        """Serve static files from web/ directory."""
+        """Serve static files from web/ directory and captures."""
         path = self.path.split("?")[0]  # strip query params
 
         if path == "/" or path == "/index.html":
             self._serve_file("index.html")
         elif path.startswith("/css/") or path.startswith("/js/") or path.startswith("/images/"):
             self._serve_file(path[1:])  # strip leading /, keep css/js/images prefix
+        elif path.startswith("/captures/"):
+            self._serve_capture(path[len("/captures/"):])
         else:
             self._send_json(404, {"error": "Not found"})
 
@@ -616,6 +800,23 @@ class WebHandler(BaseHTTPRequestHandler):
             content = f.read()
         self.send_response(200)
         self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
+
+    def _serve_capture(self, filename: str):
+        """Serve a capture file (e.g., .pcap) from captures/ directory."""
+        filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "captures", filename)
+        if not os.path.isfile(filepath):
+            self._send_json(404, {"error": "Capture file not found"})
+            return
+        _, ext = os.path.splitext(filename)
+        mime = "application/vnd.tcpdump.pcap" if ext == ".pcap" else "application/octet-stream"
+        with open(filepath, "rb") as f:
+            content = f.read()
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.send_header("Content-Length", str(len(content)))
         self.end_headers()
         self.wfile.write(content)

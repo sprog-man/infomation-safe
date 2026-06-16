@@ -17,6 +17,7 @@
         <button class="tab-btn" data-tab="playground">Crypto Playground</button>
         <button class="tab-btn" data-tab="e2e-auto">E2E 一键</button>
         <button class="tab-btn" data-tab="e2e-manual">E2E 手动</button>
+        <button class="tab-btn" data-tab="weather">Weather 安全传输</button>
     </nav>
 
     <main>
@@ -332,6 +333,112 @@
                 </div>
                 <div id="e2e-manual-result" class="result-output"></div>
             </div>
+        <!-- Tab 5: Weather Data Security -->
+        <section id="tab-weather" class="tab-content">
+            <h2>Weather 安全传输</h2>
+            <p class="hint">选择城市获取实时天气数据，通过完整加密管道安全传输，生成 Wireshark 兼容 .pcap 文件。</p>
+
+            <div class="weather-controls">
+                <label>城市:
+                    <select id="weather-city">
+                        <option value="Beijing">北京 (Beijing)</option>
+                        <option value="Shanghai">上海 (Shanghai)</option>
+                        <option value="Guangzhou">广州 (Guangzhou)</option>
+                        <option value="Shenzhen">深圳 (Shenzhen)</option>
+                        <option value="Hangzhou">杭州 (Hangzhou)</option>
+                        <option value="Chengdu">成都 (Chengdu)</option>
+                        <option value="Wuhan">武汉 (Wuhan)</option>
+                        <option value="Nanjing">南京 (Nanjing)</option>
+                        <option value="Xi'an">西安 (Xi'an)</option>
+                        <option value="Tokyo">东京 (Tokyo)</option>
+                        <option value="Seoul">首尔 (Seoul)</option>
+                        <option value="Singapore">新加坡 (Singapore)</option>
+                        <option value="London">伦敦 (London)</option>
+                        <option value="Paris">巴黎 (Paris)</option>
+                        <option value="New York">纽约 (New York)</option>
+                        <option value="Los Angeles">洛杉矶 (Los Angeles)</option>
+                    </select>
+                </label>
+                <label>API Key (可选，留空使用模拟数据):
+                    <input type="text" id="weather-api-key" placeholder="OpenWeatherMap API Key">
+                </label>
+                <div class="btn-row">
+                    <button id="btn-weather-fetch" class="btn btn-primary">获取天气数据</button>
+                    <button id="btn-weather-send" class="btn btn-secondary" disabled>加密传输</button>
+                </div>
+            </div>
+
+            <!-- Fetch Result -->
+            <div id="weather-fetch-result" class="weather-result-panel" style="display:none;">
+                <h3>原始天气数据 (发送端)</h3>
+                <div class="weather-grid">
+                    <div class="capture-card">
+                        <h4>JSON 数据</h4>
+                        <pre id="weather-json-display" class="capture-decrypted-output"></pre>
+                    </div>
+                    <div class="capture-card">
+                        <h4>哈希值</h4>
+                        <pre id="weather-hash-display" class="small-output"></pre>
+                    </div>
+                </div>
+                <h4 style="margin-top:1rem;">原始数据包 (Wireshark 风格)</h4>
+                <div class="packet-table-wrapper">
+                    <table class="packet-table" id="weather-client-packet-table">
+                        <thead>
+                            <tr><th>Offset</th><th>Hex</th><th>ASCII</th></tr>
+                        </thead>
+                        <tbody id="weather-client-packet-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pipeline Result -->
+            <div id="weather-pipeline-result" class="weather-result-panel" style="display:none;">
+                <h3>传输结果</h3>
+                <div id="weather-phases" class="phases-container"></div>
+
+                <!-- Hash Comparison -->
+                <div id="weather-hash-compare" class="hash-compare-panel" style="display:none;">
+                    <h3>哈希对比验证</h3>
+                    <div class="hash-compare-grid">
+                        <div class="hash-card">
+                            <h4>发送端原始数据</h4>
+                            <pre id="weather-client-hash" class="small-output"></pre>
+                        </div>
+                        <div class="hash-card">
+                            <h4>接收端解密数据</h4>
+                            <pre id="weather-server-hash" class="small-output"></pre>
+                        </div>
+                        <div class="hash-card">
+                            <h4>对比结果</h4>
+                            <pre id="weather-hash-match" class="small-output"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server-side capture view -->
+                <div id="weather-server-capture" class="weather-result-panel" style="display:none;">
+                    <h3>解密后数据包 (接收端)</h3>
+                    <div class="weather-grid">
+                        <div class="capture-card">
+                            <h4>JSON 数据</h4>
+                            <pre id="weather-server-json" class="capture-decrypted-output"></pre>
+                        </div>
+                        <div class="capture-card">
+                            <h4>PCAP 文件</h4>
+                            <div id="weather-pcap-info" class="small-output"></div>
+                        </div>
+                    </div>
+                    <div class="packet-table-wrapper" style="margin-top:1rem;">
+                        <table class="packet-table" id="weather-server-packet-table">
+                            <thead>
+                                <tr><th>Offset</th><th>Hex</th><th>ASCII</th></tr>
+                            </thead>
+                            <tbody id="weather-server-packet-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -342,5 +449,6 @@
     <script src="/js/pipeline.js"></script>
     <script src="/js/crypto.js"></script>
     <script src="/js/app.js"></script>
+    <script src="/js/weather.js"></script>
 </body>
 </html>

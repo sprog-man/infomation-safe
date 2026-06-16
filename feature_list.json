@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
+  "version": "2.3",
   "description": "Information Safety Experiment — Network Data Encryption, Authentication, and Transmission",
   "active_feature": null,
   "all_completed": true,
@@ -10,7 +10,7 @@
     "full_verification": "make check",
     "session_exit": "make exit",
     "init_check": "python init_check.py",
-    "total_tests": 124
+    "total_tests": 151
   },
   "features": [
     {
@@ -171,6 +171,69 @@
         "test_server_api.py — 18 tests (sensor-data, aes-enc, aes-dec, keys, encrypt-key, hmac, verify-hmac, static files, error handling)",
         "network/server.py — receive_frame now returns raw_frame, handle_client returns structured dict, run_server saves captures/*.hex and sensor_*.json",
         "server_api.py — _handle_e2e_connection records capture_hex and sensor_data, e2e-full response includes decrypted data"
+      ]
+    },
+    {
+      "id": "feat-009",
+      "name": "Weather Data Security Pipeline",
+      "status": "passing",
+      "description": "C/S architecture weather data pipeline: city dropdown → OpenWeatherMap API → Wireshark-like display → AES + RSA + HMAC encryption → TCP transmission → server decrypts → Wireshark-compatible .pcap file → hash comparison.",
+      "dependencies": ["feat-001", "feat-002", "feat-003", "feat-004", "feat-005", "feat-006", "feat-007", "feat-008"],
+      "verification": "make test",
+      "done_criteria": [
+        "Web frontend with city dropdown for weather data selection",
+        "Weather data fetched via HTTP (OpenWeatherMap API or mock fallback)",
+        "Wireshark-like hex + ASCII packet table on both client and server sides",
+        "AES + RSA key exchange + HMAC pipeline preserved from existing implementation",
+        "TCP transmission with embedded server",
+        "Server decrypts, verifies HMAC, extracts JSON",
+        "Real .pcap file generation (Wireshark-compatible) with HTTP response content",
+        "Hash comparison between client raw data and server decrypted data",
+        "PCAP download link in web UI"
+      ],
+      "evidence": [
+        "data/weather_data.py — fetch_weather, build_http_response, compute_hash, CITIES list",
+        "network/weather_client.py — build_weather_frame (fetch → HTTP wrap → AES → RSA → HMAC → frame)",
+        "network/weather_server.py — handle_weather_connection + generate_pcap (pure Python struct)",
+        "server_api.py — /api/weather/fetch, /api/weather/send, /api/weather/cities endpoints + /captures/ serving",
+        "web/index.html — 5th tab: Weather 安全传输 with city dropdown, fetch/send buttons, packet tables, hash comparison",
+        "web/css/style.css — weather tab styles (packet tables, hash comparison, weather grid)",
+        "web/js/weather.js — fetch/send logic, Wireshark-style hex table builder, hash comparison",
+        "test_weather_data.py — 12 tests (mock fetch, HTTP response builder, hashing, normalization)",
+        "test_weather_pipeline.py — 6 tests (roundtrip, frame structure, tamper rejection, pcap validation)",
+        "test_pcap.py — 9 tests (magic number, version, snaplen, linktype, record headers, IP/TCP/HTTP layers)"
+      ]
+    },
+    {
+      "id": "feat-010",
+      "name": "C/S Architecture Split — Independent Sender & Receiver",
+      "status": "passing",
+      "description": "Split the single-process embedded-server model into two independent processes: sender (port 8080, RSA public key only) and receiver (port 8081 + TCP 9999, RSA private key only). True client-server architecture.",
+      "dependencies": ["feat-009"],
+      "verification": "python sender_api.py && python receiver_api.py",
+      "done_criteria": [
+        "Sender web UI at http://localhost:8080 with city dropdown, weather fetch, Wireshark-style hex table",
+        "Receiver web UI at http://localhost:8081 showing decrypted weather data and hex table",
+        "Sender encrypts weather data with AES-128 + RSA-2048 + HMAC-SHA256 and sends via TCP to receiver",
+        "Receiver decrypts, verifies HMAC, extracts JSON, and serves via /api/weather/latest",
+        "Hash comparison between sender's original data and receiver's decrypted data confirms integrity",
+        "Receiver generates Wireshark-compatible .pcap file from decrypted data",
+        "Receiver stores latest result in thread-safe global, served by HTTP API",
+        "Pre-generated RSA keypair: sender has public key only, receiver has private key only",
+        "Zero external dependencies — stdlib http.server + socketserver only"
+      ],
+      "evidence": [
+        "sender_api.py — HTTP server on port 8080 with /api/weather/fetch, /api/weather/send, /api/weather/cities",
+        "receiver_api.py — HTTP server on port 8081 + TCP server on port 9999 (daemon thread), /api/weather/latest, /api/weather/pcap",
+        "web/sender.html — sender UI: city dropdown, fetch/send buttons, packet table, hash comparison",
+        "web/receiver.html — receiver UI: latest data display, hex table, PCAP download",
+        "web/js/sender.js — sender JS: fetch weather, build hex table, encrypt pipeline, hash comparison",
+        "web/js/receiver.js — receiver JS: poll latest data, build hex table, PCAP download",
+        "web/css/style.css — sender/receiver styles (role badges, status panels, hash grids)",
+        "sender_public.key — RSA public key (sender can encrypt, cannot decrypt)",
+        "receiver_private.key — RSA private key (receiver can decrypt, pcap generation)",
+        "DECISIONS.md — ADR for C/S split architecture",
+        "All 151 existing tests pass unchanged"
       ]
     }
   ]

@@ -1,4 +1,4 @@
-﻿"""
+"""
 network/server.py - TCP Server for Secure Sensor Data Reception
 
 Receives encrypted+authenticated data from the client, verifies the HMAC tag,

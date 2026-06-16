@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sender — 加密发送端</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Sender — 加密发送端</h1>
+        <p class="subtitle">Weather Data → AES-128 → RSA Key Exchange → HMAC-SHA256 → TCP Transmit</p>
+    </header>
+
+    <main>
+        <div class="role-badge role-sender">发送端 Sender — 仅加密，不解密</div>
+
+        <div class="weather-controls">
+            <h3>选择城市</h3>
+            <label>城市:
+                <select id="weather-city">
+                    <option value="Beijing">北京 (Beijing)</option>
+                    <option value="Shanghai">上海 (Shanghai)</option>
+                    <option value="Guangzhou">广州 (Guangzhou)</option>
+                    <option value="Shenzhen">深圳 (Shenzhen)</option>
+                    <option value="Hangzhou">杭州 (Hangzhou)</option>
+                    <option value="Chengdu">成都 (Chengdu)</option>
+                    <option value="Wuhan">武汉 (Wuhan)</option>
+                    <option value="Nanjing">南京 (Nanjing)</option>
+                    <option value="Xi'an">西安 (Xi'an)</option>
+                    <option value="Tokyo">东京 (Tokyo)</option>
+                    <option value="Seoul">首尔 (Seoul)</option>
+                    <option value="Singapore">新加坡 (Singapore)</option>
+                    <option value="London">伦敦 (London)</option>
+                    <option value="Paris">巴黎 (Paris)</option>
+                    <option value="New York">纽约 (New York)</option>
+                    <option value="Los Angeles">洛杉矶 (Los Angeles)</option>
+                </select>
+            </label>
+            <div class="btn-row">
+                <button id="btn-start" class="btn btn-large btn-primary">▶ 一键加密传输</button>
+            </div>
+            <p class="hint" style="margin-top:0.5rem;">天气数据来源于 Open-Meteo 免费 API，无需 API Key，实时获取。</p>
+        </div>
+
+        <!-- Raw Weather Data (pre-encryption display) -->
+        <div id="weather-display" class="result-panel" style="display:none;">
+            <h3>🌤 原始天气数据（发送端抓取）</h3>
+            <div class="data-grid">
+                <div class="data-card">
+                    <h4>JSON 数据</h4>
+                    <pre id="json-display" class="mono-output"></pre>
+                </div>
+                <div class="data-card">
+                    <h4>数据哈希</h4>
+                    <pre id="hash-display" class="mono-output"></pre>
+                </div>
+            </div>
+            <h4 style="margin-top:1rem;">原始 HTTP 数据包（Wireshark 风格）</h4>
+            <div class="packet-table-wrapper">
+                <table class="packet-table">
+                    <thead>
+                        <tr><th>Offset</th><th>Hex</th><th>ASCII</th></tr>
+                    </thead>
+                    <tbody id="sender-packet-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Crypto Step Display -->
+        <div id="step-display" class="steps-container" style="display:none;">
+            <div class="step-flow-arrow">加密流程 (发送端)</div>
+            <div id="step-cards" class="step-cards"></div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Sender — 选择城市 → 获取实时天气 → 全自动加密传输 → 展示加密中间过程</p>
+    </footer>
+
+    <script src="/js/sender.js"></script>
+</body>
+</html>

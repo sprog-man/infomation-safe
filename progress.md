@@ -2,9 +2,89 @@
 
 ## Current State
 
-**Active Feature:** harness-engineering-upgrade
+**Active Feature:** feat-010 — C/S Architecture Split
+**Status:** In Progress
+**Last Updated:** 2026-06-16
+
+---
+
+## feat-010: C/S Architecture Split — Independent Sender & Receiver ✅
+
 **Status:** Completed
-**Last Updated:** 2026-06-15
+**Date:** 2026-06-16
+
+**Split the single-process embedded-server model into two independent processes: sender (port 8080, RSA public key only) and receiver (port 8081 + TCP 9999, RSA private key only).**
+
+### New Files Created
+- `sender_api.py` — HTTP server on port 8080 with weather fetch + encrypt + TCP transmit endpoints
+- `receiver_api.py` — HTTP server on port 8081 + TCP server on port 9999 in daemon thread
+- `web/sender.html` — Sender web UI with city dropdown, fetch/send buttons, packet table, hash comparison
+- `web/receiver.html` — Receiver web UI with latest data display, hex table, PCAP download
+- `web/js/sender.js` — Sender JS: fetch, encrypt pipeline, hash comparison
+- `web/js/receiver.js` — Receiver JS: poll latest, hex table, PCAP download
+- `sender_public.key` — RSA public key (pre-generated 2048-bit)
+- `receiver_private.key` — RSA private key (pre-generated 2048-bit)
+
+### Files Modified
+- `web/css/style.css` — added sender/receiver styles (role badges, status panels, data/hash grids, highlight panels)
+- `Makefile` — added `sender`, `receiver`, `crypto-setup` targets
+- `AGENTS.md` — added C/S split section, updated directory structure and quick-start
+- `feature_list.json` — v2.2 → v2.3. Added feat-010
+- `DECISIONS.md` — added ADR for C/S split architecture
+
+### Test Count
+- Existing 151 tests unchanged (all pass)
+- feat-010 adds no new test dependencies — verified via e2e manual test
+
+### Done Criteria Verification:
+- [x] Sender web UI at http://localhost:8080 with city dropdown, weather fetch, Wireshark-style hex table
+- [x] Receiver web UI at http://localhost:8081 showing decrypted weather data and hex table
+- [x] Sender encrypts weather data (AES-128 + RSA-2048 + HMAC-SHA256) and sends via TCP
+- [x] Receiver decrypts, verifies HMAC, stores result, serves via HTTP API
+- [x] Hash comparison confirms sender and receiver data match
+- [x] Receiver generates Wireshark-compatible .pcap file
+- [x] Sender has RSA public key only, receiver has RSA private key only
+- [x] Zero external dependencies — stdlib only
+
+---
+
+## feat-009: Weather Data Security Pipeline ✅
+
+**Status:** Completed
+**Date:** 2026-06-16
+
+**Added C/S weather data security pipeline with Wireshark-like display and .pcap generation.**
+
+### New Files Created
+- `data/weather_data.py` — weather fetch (OpenWeatherMap + mock fallback), HTTP response builder, hashing
+- `network/weather_client.py` — weather frame builder (fetch → HTTP wrap → AES → RSA → HMAC → TCP frame)
+- `network/weather_server.py` — weather connection handler + PCAP binary generator (pure Python `struct`)
+- `test_weather_data.py` — 12 unit tests
+- `test_weather_pipeline.py` — 6 integration tests
+- `test_pcap.py` — 9 PCAP format validation tests
+- `web/js/weather.js` — Weather tab frontend logic (city dropdown, fetch/send, packet tables, hash comparison)
+
+### Files Modified
+- `server_api.py` — added 3 weather API endpoints (`weather/fetch`, `weather/send`, `weather/cities`), captures/ serving
+- `web/index.html` — added 5th tab: Weather 安全传输
+- `web/css/style.css` — weather tab styles (packet tables, hash comparison, weather grid)
+- `Makefile` — added weather test scripts to TESTS variable
+- `feature_list.json` — v2.1 → v2.2. Added feat-009, total_tests: 124→151
+
+### Test Count
+- Before: 124 tests (8 scripts)
+- After: 151 tests (11 scripts) — +27 from weather tests
+
+**Done Criteria Verification:**
+- [x] Web frontend with city dropdown for weather data selection
+- [x] Weather data fetched via HTTP (OpenWeatherMap API or mock fallback)
+- [x] Wireshark-like hex + ASCII packet table on both client and server sides
+- [x] AES + RSA key exchange + HMAC pipeline preserved
+- [x] TCP transmission with embedded server
+- [x] Server decrypts, verifies HMAC, extracts JSON
+- [x] Real .pcap file generation (Wireshark-compatible) with HTTP response content
+- [x] Hash comparison between client and server data
+- [x] PCAP download link in web UI
 
 ---
 

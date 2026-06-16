@@ -71,3 +71,27 @@ Record of important design decisions and their rationale.
 - **Alternatives considered**:
   - UDP: Faster but requires application-level retransmission and ordering logic. Adds complexity not needed for this experiment.
 - **When to revisit**: If performance testing shows TCP overhead is significant.
+
+---
+
+## 2026-06-16: C/S Split Architecture — Independent Sender & Receiver
+
+- **Decision**: Replace the single-process embedded-server model with two independent processes: `sender_api.py` (port 8080) and `receiver_api.py` (port 8081 + TCP 9999).
+- **Reason**: The experiment requires a true client-server architecture. Previously, the weather pipeline ran an ephemeral TCP server embedded in a single HTTP request handler, which prevented independent operation. The split allows the receiver to run persistently, accept frames from a real TCP sender, and serve its own web UI with decrypted data and PCAP downloads.
+- **Key design choices**:
+  - `sender_api.py` has RSA **public** key only — can encrypt, cannot decrypt
+  - `receiver_api.py` has RSA **private** key only — can decrypt, serves both HTTP (8081) and TCP (9999) in one process
+  - Receiver **generates RSA keypair on startup**, sender **fetches public key via HTTP API** (`/api/weather/public-key`). No pre-distributed key files needed.
+  - Receiver TCP handler is a daemon thread using `socketserver.ThreadingTCPServer`
+  - Receiver stores latest result in a thread-safe global dict, served via `/api/weather/latest`
+- **Files added**: `sender_api.py`, `receiver_api.py`, `web/sender.html`, `web/receiver.html`, `web/js/sender.js`, `web/js/receiver.js`
+- **Backward compatibility**: `server_api.py` remains unchanged, all 151 existing tests pass
+- **When to revisit**: If TCP needs to handle concurrent connections from multiple senders
+
+---
+
+## 2026-06-16: Receiver-Generated RSA Keys (removed pre-generated key files)
+
+- **Decision**: Remove `sender_public.key` and `receiver_private.key` pre-generated key files. Receiver now generates RSA keypair on every startup; sender fetches the public key via HTTP API.
+- **Reason**: Pre-generated keys violated the real-world security principle that the private key should never leave the receiver. The new design matches actual C/S key exchange: receiver generates keys → sender requests public key on demand.
+- **Impact**: Removed `sender_public.key`, `receiver_private.key`, `crypto-setup` Make target. Sender must be started after receiver (it fails with a clear error if receiver is unreachable).

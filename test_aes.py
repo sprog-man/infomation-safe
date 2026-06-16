@@ -1,4 +1,4 @@
-﻿"""
+"""
 test_aes.py - Validate AES-128 encryption/decryption from scratch.
 
 Run with: python test_aes.py

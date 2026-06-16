@@ -1,4 +1,4 @@
-﻿"""
+"""
 test_sensor.py - Validate sensor data format and structure.
 
 Run with: python test_sensor.py

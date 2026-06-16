@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# pre-commit — Enforce documentation sync before commits.
+#
+# Installed via: git config core.hooksPath hooks
+# (or copy to .git/hooks/pre-commit for per-repo setup)
+#
+# This hook prevents commits where source code changes are made
+# without corresponding updates to progress.md.
+#
+
+echo ""
+echo "=== pre-commit: checking documentation sync ==="
+echo ""
+
+python done_check.py --git
+result=$?
+
+if [ $result -ne 0 ]; then
+    echo ""
+    echo "=== COMMIT REJECTED ==="
+    echo "Update the files listed above, then stage and commit again."
+    echo ""
+    exit 1
+fi
+
+echo "=== pre-commit: OK ==="
+echo ""
+exit 0

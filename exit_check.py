@@ -84,22 +84,48 @@ def check_progress_updated() -> bool:
 
 
 def check_no_debug_artifacts() -> bool:
-    """Dimension 4: No debug code left behind."""
-    # Check for common debug artifacts in source files
-    debug_patterns = ["console.log", "debugger;", "pdb.set_trace()"]
-    source_dirs = ["data", "crypto", "auth", "network"]
-    found = False
+    """Dimension 4: No debug code left behind in source files."""
 
-    for src_dir in source_dirs:
+    # Python debug patterns (checked in .py files)
+    py_debug_patterns = [
+        ("breakpoint()", "breakpoint"),
+        ("pdb.set_trace()", "pdb"),
+    ]
+
+    # Debug print — flagged separately (some prints are intentional in CLI tools)
+    print_pattern = ("print(", "debug print")
+
+    # JS debug patterns (checked in web/js/ files)
+    js_debug_patterns = [
+        ("console.log", "console.log"),
+        ("debugger;", "debugger"),
+    ]
+
+    scan_targets = {
+        "data": {"ext": ".py", "patterns": py_debug_patterns + [print_pattern]},
+        "crypto": {"ext": ".py", "patterns": py_debug_patterns + [print_pattern]},
+        "auth": {"ext": ".py", "patterns": py_debug_patterns + [print_pattern]},
+        "network": {"ext": ".py", "patterns": py_debug_patterns + [print_pattern]},
+        "web/js": {"ext": ".js", "patterns": js_debug_patterns},
+    }
+
+    found = False
+    for src_dir, config in scan_targets.items():
         if not os.path.isdir(src_dir):
             continue
-        for pyfile in glob.glob(f"{src_dir}/**/*.py", recursive=True):
-            with open(pyfile, "r", encoding="utf-8") as f:
-                for i, line in enumerate(f, 1):
-                    for pattern in debug_patterns:
-                        if pattern in line.lower():
-                            print(f"  [WARN] {pyfile}:{i} contains '{pattern}'")
-                            found = True
+        for root, _dirs, files in os.walk(src_dir):
+            for fname in files:
+                if not fname.endswith(config["ext"]):
+                    continue
+                path = os.path.join(root, fname)
+                with open(path, "r", encoding="utf-8") as f:
+                    for i, line in enumerate(f, 1):
+                        stripped = line.strip()
+                        for pattern, label in config["patterns"]:
+                            if stripped.startswith(pattern):
+                                print(f"  [WARN] {path}:{i} contains {label}")
+                                found = True
+                                break
 
     if not found:
         print("  [OK] No debug artifacts found")

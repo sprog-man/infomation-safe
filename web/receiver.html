@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receiver — 解密接收端</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Receiver — 解密接收端</h1>
+        <p class="subtitle">TCP Receive → HMAC Verify → RSA Decrypt Key → AES Decrypt → PCAP</p>
+    </header>
+
+    <main>
+        <div class="role-badge role-receiver">接收端 Receiver — 仅解密，不加密</div>
+
+        <!-- Status bar -->
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">TCP 服务:</span>
+                <span class="status-badge status-active">监听中 :9999</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">最新接收:</span>
+                <span id="last-received" class="status-text">等待数据...</span>
+            </div>
+            <div class="btn-row" style="margin-top: 0.5rem;">
+                <button id="btn-refresh" class="btn btn-primary">🔄 刷新最新数据</button>
+                <button id="btn-download-pcap" class="btn btn-secondary" disabled>📥 下载 PCAP</button>
+            </div>
+        </div>
+
+        <!-- Decryption Steps Display -->
+        <div id="decrypt-display" class="steps-container" style="display:none;">
+            <div class="step-flow-arrow">解密流程 (接收端)</div>
+            <div id="decrypt-step-cards" class="step-cards"></div>
+        </div>
+
+        <!-- Hash Comparison (receiver can do this — it has the decrypted data) -->
+        <div id="hash-compare" class="highlight-panel" style="display:none;">
+            <h3>🔐 数据完整性验证（接收端对比）</h3>
+            <p class="hint">接收端将解密后的 JSON 数据计算哈希，与发送端加密前的原始数据哈希进行对比，验证传输过程中数据未被篡改。</p>
+            <div class="hash-grid">
+                <div class="hash-card">
+                    <h4>发送端原始数据哈希</h4>
+                    <pre id="rcv-client-hash" class="mono-output">等待发送端数据...</pre>
+                </div>
+                <div class="hash-card">
+                    <h4>接收端解密数据哈希</h4>
+                    <pre id="rcv-server-hash" class="mono-output"></pre>
+                </div>
+                <div class="hash-card">
+                    <h4>对比结果</h4>
+                    <pre id="rcv-hash-match" class="mono-output"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Raw data panels -->
+        <div id="data-panels" class="data-panels" style="display:none;">
+            <div class="result-panel">
+                <h3>🌤 解密后天气数据</h3>
+                <div class="data-grid">
+                    <div class="data-card">
+                        <h4>JSON 数据</h4>
+                        <pre id="json-display" class="mono-output"></pre>
+                    </div>
+                    <div class="data-card">
+                        <h4>解密数据哈希</h4>
+                        <pre id="hash-display" class="mono-output"></pre>
+                    </div>
+                </div>
+                <h4 style="margin-top:1rem;">解密后数据包 (Wireshark 风格)</h4>
+                <div class="packet-table-wrapper">
+                    <table class="packet-table">
+                        <thead>
+                            <tr><th>Offset</th><th>Hex</th><th>ASCII</th></tr>
+                        </thead>
+                        <tbody id="packet-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="highlight-panel" style="margin-top:1rem;">
+                <h3>连接信息</h3>
+                <pre id="conn-info-display" class="mono-output"></pre>
+            </div>
+        </div>
+
+        <div id="no-data-panel" class="result-panel">
+            <h3 style="color:var(--text-muted);">等待接收数据...</h3>
+            <p class="hint">发送端将加密后的天气数据通过 TCP 端口 9999 发送到接收端。</p>
+            <p class="hint">请确保发送端 (Sender) 已启动并单击"一键加密传输"。</p>
+        </div>
+    </main>
+
+    <footer>
+        <p>Receiver — 自动接收 → HMAC 验证 → RSA 解密密钥 → AES 解密 → 展示完整过程</p>
+    </footer>
+
+    <script src="/js/receiver.js"></script>
+</body>
+</html>
